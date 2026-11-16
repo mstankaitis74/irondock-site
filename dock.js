@@ -4,27 +4,38 @@
   if (!hero) return;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  // Lamps stop pulsing and the parallax stops updating while the scene is scrolled out of view.
+  let heroVisible = true;
+  new IntersectionObserver(([entry]) => {
+    heroVisible = entry.isIntersecting;
+    hero.classList.toggle('is-offscreen', !heroVisible);
+  }).observe(hero);
+
   // ---- Parallax: feeds scroll position and pointer offset to CSS (see .layer in dock.css) ----
-  if (!reducedMotion) {
+  const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
+  // On touch devices dock.css moves the layers with a scroll-driven animation when the browser has one.
+  const cssScrollParallax = matchMedia('(hover: none)').matches && CSS.supports('animation-timeline: scroll(root)');
+  if (!reducedMotion && !(cssScrollParallax && !finePointer)) {
     let pointerTarget = 0;
     let pointer = 0;
     let frame = 0;
+    let heroHeight = hero.offsetHeight;
+    addEventListener('resize', () => { heroHeight = hero.offsetHeight; });
 
     const render = () => {
       frame = 0;
       pointer += (pointerTarget - pointer) * 0.08;
-      // Nothing to move once the hero has scrolled out of view.
-      hero.style.setProperty('--scroll', Math.min(scrollY, hero.offsetHeight));
+      if (!cssScrollParallax) hero.style.setProperty('--scroll', Math.min(scrollY, heroHeight));
       hero.style.setProperty('--pointer', pointer.toFixed(4));
-      if (Math.abs(pointerTarget - pointer) > 0.001) schedule();
+      if (heroVisible && Math.abs(pointerTarget - pointer) > 0.001) schedule();
     };
     const schedule = () => { frame ||= requestAnimationFrame(render); };
 
-    addEventListener('scroll', schedule, { passive: true });
-    if (matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    addEventListener('scroll', () => { if (heroVisible) schedule(); }, { passive: true });
+    if (finePointer) {
       addEventListener('pointermove', (event) => {
         pointerTarget = (event.clientX / innerWidth) * 2 - 1;
-        schedule();
+        if (heroVisible) schedule();
       });
     }
     schedule();
@@ -96,6 +107,20 @@
     });
     document.body.classList.remove('is-swapping');
   };
+
+  // Fetch a page as soon as a tap or hover shows the intent, and the other berths once the browser is idle,
+  // so the click itself only has to move the camera.
+  const prefetch = (event) => {
+    const link = event.target.closest?.('a[data-nav]');
+    if (link) load(link.href).catch(() => {});
+  };
+  document.addEventListener('pointerenter', prefetch, { capture: true, passive: true });
+  document.addEventListener('touchstart', prefetch, { capture: true, passive: true });
+  if (!navigator.connection?.saveData) {
+    (window.requestIdleCallback ?? setTimeout)(() => {
+      document.querySelectorAll('a.berth[data-nav], a.lang').forEach((link) => load(link.href).catch(() => {}));
+    });
+  }
 
   document.addEventListener('click', (event) => {
     const link = event.target.closest('a[data-nav]');

@@ -16,9 +16,9 @@ a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-
         --scene-h: calc(var(--hero-h) * 0.8);
         --step: clamp(300px, 34vw, 620px);   /* distance between two berths on the pier */
         --stations: 3;                        /* number of the last berth; raise it when an app is added */
-        --pad: 300px;                         /* spare scene on both sides for the pointer shift */
+        --pad: 48px;                          /* spare scene on both sides for the pointer shift */
         --cam: 0; --scroll: 0; --pointer: 0;
-        position: relative; height: var(--hero-h); overflow: hidden;
+        position: relative; height: var(--hero-h); overflow: hidden; contain: layout paint;
         background: radial-gradient(ellipse 50% 28% at 50% 88%, rgba(255,138,122,0.16), transparent),
                     linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-horizon) 82%); }
 @supports (height: 1svh) { .hero { --hero-h: clamp(520px, 68svh, 760px); } }
@@ -37,7 +37,8 @@ h1 { font-size: clamp(48px, 8vw, 88px); line-height: 1; font-weight: 800; letter
          position: absolute; bottom: 0; left: calc(var(--pad) * -1); height: var(--scene-h);
          width: calc(100% + var(--pad) * 2 + var(--pan) * var(--stations));
          font-size: calc(var(--scene-h) / 70);   /* 1em = 10 units of the 700-unit-high tiles */
-         background-repeat: repeat-x; background-position: left bottom; background-size: auto 100%;
+         /* The tile starts 300px left of the hero whatever --pad is, so the pattern sits the same on every device. */
+         background-repeat: repeat-x; background-position: calc(var(--pad) - 300px) bottom, 0 0; background-size: auto 100%;
          pointer-events: none; will-change: translate, transform;
          translate: calc(var(--cam) * var(--pan) * -1) 0;
          transition: translate 1.4s cubic-bezier(0.65, 0, 0.2, 1);
@@ -72,11 +73,14 @@ a.mark:hover .plate { border-color: var(--berth); translate: 0 -0.25em; }
 .lamp { position: absolute; left: -0.25em; bottom: 0; width: 0.5em; height: 12em; background: var(--iron); }
 .lamp::before { content: ""; position: absolute; left: 50%; top: 0; width: 1.8em; height: 1.8em;
                 translate: -50% -50%; border-radius: 50%; background: var(--berth); }
+/* The glow only animates opacity and has no mask, so it never needs repainting while it pulses. */
 .lamp::after { content: ""; position: absolute; left: 50%; top: 0; width: 28em; height: 28em;
-               translate: -50% -50%; opacity: 0.55; background: var(--berth);
-               -webkit-mask-image: radial-gradient(closest-side, #000, rgba(0,0,0,0.45) 30%, rgba(0,0,0,0.12) 65%, transparent);
-               mask-image: radial-gradient(closest-side, #000, rgba(0,0,0,0.45) 30%, rgba(0,0,0,0.12) 65%, transparent);
-               pointer-events: none; animation: beacon 5s ease-in-out infinite; }
+               translate: -50% -50%; opacity: 0.55; pointer-events: none;
+               background: radial-gradient(closest-side, var(--berth), transparent);
+               background: radial-gradient(closest-side, var(--berth), color-mix(in srgb, var(--berth) 45%, transparent) 30%,
+                                           color-mix(in srgb, var(--berth) 12%, transparent) 65%, transparent);
+               animation: beacon 5s ease-in-out infinite; }
+.hero.is-offscreen .lamp::after { animation-play-state: paused; }
 .lamp--pulse::after { animation: heartbeat 1.2s ease-out infinite; }
 .mark--home .lamp { height: 19em; width: 0.7em; left: -0.35em; }
 .plate { position: absolute; left: 3.2em; bottom: 4.6em; width: 8.6em; padding: 0.5em 0 0.6em;
@@ -91,6 +95,19 @@ a.mark:hover .plate { border-color: var(--berth); translate: 0 -0.25em; }
               -webkit-mask-image: radial-gradient(ellipse 50% 100% at 50% 0, #000 35%, transparent);
               mask-image: radial-gradient(ellipse 50% 100% at 50% 0, #000 35%, transparent); }
 @keyframes beacon { 50% { opacity: 0.2; } }
+
+/* Touch devices have no pointer shift, so the layers need no spare width, and where the browser can
+   tie an animation to the scroll position the scroll parallax runs off the main thread (dock.js then
+   leaves --scroll alone). Same movement as the transform above. */
+@media (hover: none) {
+  .hero { --pad: 0px; }
+  @supports (animation-timeline: scroll(root)) {
+    .layer, .hero-text { transform: none; animation: scroll-parallax linear both;
+                         animation-timeline: scroll(root); animation-range: 0px var(--hero-h); }
+    .hero-text { --depth: 0.3; }
+  }
+}
+@keyframes scroll-parallax { to { transform: translate3d(0, calc(var(--hero-h) * var(--depth)), 0); } }
 @keyframes heartbeat {
   0%, 30%, 100% { opacity: 0.25; }
   8% { opacity: 0.75; }
@@ -156,8 +173,8 @@ footer { max-width: 720px; margin: 0 auto; padding: 48px 20px; color: var(--mute
 .is-swapping [data-swap] { opacity: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .layer { transform: none; transition: none; }
-  .hero-text { transform: none; }
+  .layer { transform: none; transition: none; animation: none; }
+  .hero-text { transform: none; animation: none; }
   .lamp::after { animation: none; }
   [data-swap], .flag, .plate { transition: none; }
 }
