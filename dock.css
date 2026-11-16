@@ -162,6 +162,9 @@ body:not([data-berth="0"]) .berth p { display: none; }
 .content { max-width: 720px; margin: 0 auto; padding: 40px 20px 0; }
 .content p, .content li { color: var(--muted); line-height: 1.6; }
 .intro { font-size: 20px; margin: 0 0 32px; }
+.content h2 { font-size: 24px; margin: 40px 0 12px; }
+.content h3 { font-size: 18px; margin: 24px 0 4px; }
+.content h3 + p { margin: 0; }
 .facts { list-style: none; padding: 0; margin: 0 0 32px; display: grid; gap: 12px; }
 .facts li { background: var(--card); border-radius: 16px; padding: 16px 20px; }
 .facts strong { color: var(--text); }

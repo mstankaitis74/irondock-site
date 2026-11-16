@@ -3,19 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Talkvault – automatic call recorder for Android | Irondock</title>
-<meta name="description" content="Talkvault records your phone calls automatically and keeps them on your phone, sorted by contact, with app lock, notes, tags and auto-delete.">
+<title>Talkvault – automatic call recorder for Android (APK) | Irondock</title>
+<meta name="description" content="Talkvault records your phone calls automatically and keeps them on your phone, with app lock, notes and auto-delete. APK download for Android 7.0 and newer.">
 <link rel="canonical" href="https://irondock.dev/talkvault/">
 <link rel="alternate" hreflang="en" href="https://irondock.dev/talkvault/">
 <link rel="alternate" hreflang="lt" href="https://irondock.dev/lt/talkvault/">
 <link rel="alternate" hreflang="x-default" href="https://irondock.dev/talkvault/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Irondock">
-<meta property="og:title" content="Talkvault – automatic call recorder for Android | Irondock">
-<meta property="og:description" content="Talkvault records your phone calls automatically and keeps them on your phone, sorted by contact, with app lock, notes, tags and auto-delete.">
+<meta property="og:title" content="Talkvault – automatic call recorder for Android (APK) | Irondock">
+<meta property="og:description" content="Talkvault records your phone calls automatically and keeps them on your phone, with app lock, notes and auto-delete. APK download for Android 7.0 and newer.">
 <meta property="og:url" content="https://irondock.dev/talkvault/">
 <meta property="og:image" content="https://irondock.dev/og.png">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="robots" content="max-image-preview:large">
 <meta name="theme-color" content="#14295a">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../dock.css">
@@ -25,17 +26,37 @@
 <link rel="preload" as="image" type="image/svg+xml" href="../scene/water.svg">
 <link rel="preload" as="image" type="image/svg+xml" href="../scene/quay.svg">
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "Talkvault",
-  "url": "https://irondock.dev/talkvault/",
-  "description": "Records your phone calls automatically and keeps them on your phone.",
-  "operatingSystem": "Android",
-  "applicationCategory": "UtilitiesApplication",
-  "softwareVersion": "1.9",
-  "downloadUrl": "https://irondock.dev/talkvault/talkvault-1.9.apk"
-}
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Talkvault",
+    "url": "https://irondock.dev/talkvault/",
+    "description": "Records your phone calls automatically and keeps them on your phone.",
+    "operatingSystem": "Android",
+    "applicationCategory": "UtilitiesApplication",
+    "softwareVersion": "1.9",
+    "downloadUrl": "https://irondock.dev/talkvault/talkvault-1.9.apk"
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Irondock",
+        "item": "https://irondock.dev/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Talkvault",
+        "item": "https://irondock.dev/talkvault/"
+      }
+    ]
+  }
+]
 </script>
 </head>
 <body data-berth="3">
@@ -99,6 +120,7 @@
     <p class="hash">SHA-256: <code>f310aaa4dd33663e5bc764b199f311ccdc7ce449ee0578a51bd40f2ada95d1b4</code></p>
   </div>
   <p class="intro">Turn it on once and every call is saved as an audio file, sorted by contact. Talkvault records your side through the microphone, so put the call on speaker to capture the other person too.</p>
+  <h2>What it does</h2>
   <ul class="facts">
     <li><strong>Automatic.</strong> Recording starts and stops with the call. Pause it with one switch, skip short calls, or list numbers that should never be recorded.</li>
     <li><strong>Sorted by contact.</strong> Recordings are grouped by number or contact name. Search by name or digits, and see which calls were incoming or outgoing.</li>
@@ -108,6 +130,17 @@
     <li><strong>Yours to move.</strong> Share a single recording, or export everything with notes to a ZIP and import it on another phone.</li>
   </ul>
   <p>Call recording laws differ by country. In many places everyone on the call must be told and agree to being recorded. You are responsible for following the law where you are.</p>
+  <h2>Questions and answers</h2>
+  <h3>How does Talkvault record calls on new Android versions?</h3>
+  <p>Since Android 10 only an accessibility service can use the microphone during a phone call, so Talkvault runs as one. It records audio and does not read what is on your screen.</p>
+  <h3>Why is the other person quiet in the recording?</h3>
+  <p>Android does not let apps capture the other side of the line. Talkvault records through the microphone, so turn on the speaker and the other person is recorded as well.</p>
+  <h3>Where are my recordings kept?</h3>
+  <p>In the app's private storage on your phone. Talkvault has no internet permission, so a recording leaves the phone only when you share or export it yourself.</p>
+  <h3>How do I install the APK?</h3>
+  <p>Download it with the button above and open the file. The first time, Android asks you to allow installing from your browser. On Android 13 and newer you may also have to open the app's info screen, tap the menu in the corner and choose “Allow restricted settings” before the recording service can be turned on.</p>
+  <h3>How do I update Talkvault?</h3>
+  <p>Download the newer APK from this page and install it over the old one. Your recordings, notes and settings stay.</p>
 </main>
 
 <footer data-swap-lang="footer">Contact: <a href="mailto:info@irondock.dev">info@irondock.dev</a></footer>

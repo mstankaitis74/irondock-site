@@ -16,6 +16,7 @@
 <meta property="og:url" content="https://irondock.dev/beatsy/">
 <meta property="og:image" content="https://irondock.dev/og.png">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="robots" content="max-image-preview:large">
 <meta name="theme-color" content="#14295a">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../dock.css">
@@ -25,20 +26,40 @@
 <link rel="preload" as="image" type="image/svg+xml" href="../scene/water.svg">
 <link rel="preload" as="image" type="image/svg+xml" href="../scene/quay.svg">
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "Beatsy",
-  "url": "https://irondock.dev/beatsy/",
-  "description": "Check your heart rate with your phone camera.",
-  "operatingSystem": "Android",
-  "applicationCategory": "HealthApplication",
-  "offers": {
-    "@type": "Offer",
-    "price": "0",
-    "priceCurrency": "EUR"
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Beatsy",
+    "url": "https://irondock.dev/beatsy/",
+    "description": "Check your heart rate with your phone camera.",
+    "operatingSystem": "Android",
+    "applicationCategory": "HealthApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "EUR"
+    }
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Irondock",
+        "item": "https://irondock.dev/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Beatsy",
+        "item": "https://irondock.dev/beatsy/"
+      }
+    ]
   }
-}
+]
 </script>
 </head>
 <body data-berth="1">
@@ -97,6 +118,7 @@
 
 <main class="content" data-swap="main">
   <p class="intro">Put a fingertip on the back camera and Beatsy reads your pulse. Ads never interrupt a measurement, and your data stays on your phone.</p>
+  <h2>What it does</h2>
   <ul class="facts">
     <li><strong>Stays on your phone.</strong> No accounts, servers or analytics. Measurements are never sent to us or to anyone else.</li>
     <li><strong>Camera only while measuring.</strong> The picture is never recorded or sent anywhere.</li>
@@ -107,6 +129,15 @@
   </ul>
   <p>Beatsy is not a medical device. Results are for information only.</p>
   <p><a href="privacy/#en">Privacy policy</a></p>
+  <h2>Questions and answers</h2>
+  <h3>How can a phone measure heart rate?</h3>
+  <p>Your fingertip covers the back camera while the flash shines through it. Every heartbeat changes how much light passes through the skin, and Beatsy counts those changes. No watch or chest strap is needed.</p>
+  <h3>Can I use Beatsy for medical decisions?</h3>
+  <p>No. Beatsy is not a medical device. It is for keeping an eye on your pulse, for example at rest or after exercise, and it does not replace a doctor or medical equipment.</p>
+  <h3>Does Beatsy need an account or the internet?</h3>
+  <p>There is no account. Measurements are stored only on your phone. The internet is used for ads on the History screen and for nothing else.</p>
+  <h3>How do I move my measurements to another phone?</h3>
+  <p>Export a period as a PDF or CSV file before you switch. Beatsy data is left out of Android backups on purpose, so it is not copied to a new phone by itself.</p>
 </main>
 
 <footer data-swap-lang="footer">Contact: <a href="mailto:info@irondock.dev">info@irondock.dev</a></footer>

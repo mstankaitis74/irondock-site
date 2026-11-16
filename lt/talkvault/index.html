@@ -3,19 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Talkvault – automatinis skambučių įrašymas Android telefone | Irondock</title>
-<meta name="description" content="Talkvault automatiškai įrašo telefono skambučius ir laiko juos tavo telefone, surūšiuotus pagal kontaktus: su užraktu, pastabomis, žymomis ir automatiniu trynimu.">
+<title>Talkvault – skambučių įrašymas Android telefone (APK) | Irondock</title>
+<meta name="description" content="Talkvault automatiškai įrašo telefono skambučius ir laiko juos tavo telefone: su užraktu, pastabomis ir automatiniu trynimu. APK, skirtas Android 7.0 ir naujesnėms versijoms.">
 <link rel="canonical" href="https://irondock.dev/lt/talkvault/">
 <link rel="alternate" hreflang="en" href="https://irondock.dev/talkvault/">
 <link rel="alternate" hreflang="lt" href="https://irondock.dev/lt/talkvault/">
 <link rel="alternate" hreflang="x-default" href="https://irondock.dev/talkvault/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Irondock">
-<meta property="og:title" content="Talkvault – automatinis skambučių įrašymas Android telefone | Irondock">
-<meta property="og:description" content="Talkvault automatiškai įrašo telefono skambučius ir laiko juos tavo telefone, surūšiuotus pagal kontaktus: su užraktu, pastabomis, žymomis ir automatiniu trynimu.">
+<meta property="og:title" content="Talkvault – skambučių įrašymas Android telefone (APK) | Irondock">
+<meta property="og:description" content="Talkvault automatiškai įrašo telefono skambučius ir laiko juos tavo telefone: su užraktu, pastabomis ir automatiniu trynimu. APK, skirtas Android 7.0 ir naujesnėms versijoms.">
 <meta property="og:url" content="https://irondock.dev/lt/talkvault/">
 <meta property="og:image" content="https://irondock.dev/og.png">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="robots" content="max-image-preview:large">
 <meta name="theme-color" content="#14295a">
 <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../../dock.css">
@@ -25,17 +26,37 @@
 <link rel="preload" as="image" type="image/svg+xml" href="../../scene/water.svg">
 <link rel="preload" as="image" type="image/svg+xml" href="../../scene/quay.svg">
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "Talkvault",
-  "url": "https://irondock.dev/lt/talkvault/",
-  "description": "Automatiškai įrašo telefono skambučius ir laiko juos tavo telefone.",
-  "operatingSystem": "Android",
-  "applicationCategory": "UtilitiesApplication",
-  "softwareVersion": "1.9",
-  "downloadUrl": "https://irondock.dev/talkvault/talkvault-1.9.apk"
-}
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Talkvault",
+    "url": "https://irondock.dev/lt/talkvault/",
+    "description": "Automatiškai įrašo telefono skambučius ir laiko juos tavo telefone.",
+    "operatingSystem": "Android",
+    "applicationCategory": "UtilitiesApplication",
+    "softwareVersion": "1.9",
+    "downloadUrl": "https://irondock.dev/talkvault/talkvault-1.9.apk"
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Irondock",
+        "item": "https://irondock.dev/lt/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Talkvault",
+        "item": "https://irondock.dev/lt/talkvault/"
+      }
+    ]
+  }
+]
 </script>
 </head>
 <body data-berth="3">
@@ -99,6 +120,7 @@
     <p class="hash">SHA-256: <code>f310aaa4dd33663e5bc764b199f311ccdc7ce449ee0578a51bd40f2ada95d1b4</code></p>
   </div>
   <p class="intro">Įjunk vieną kartą ir kiekvienas skambutis išsaugomas kaip garso failas, surūšiuotas pagal kontaktą. Talkvault įrašo tavo pusę per mikrofoną, todėl įjunk garsiakalbį, kad įsirašytų ir pašnekovas.</p>
+  <h2>Ką moka</h2>
   <ul class="facts">
     <li><strong>Automatiškai.</strong> Įrašymas prasideda ir baigiasi kartu su skambučiu. Sustabdyk jį vienu jungikliu, praleisk trumpus skambučius arba nurodyk numerius, kurių niekada neįrašyti.</li>
     <li><strong>Pagal kontaktus.</strong> Įrašai sugrupuoti pagal numerį ar kontakto vardą. Ieškok pagal vardą ar skaitmenis ir matyk, kuris skambutis buvo gaunamas, o kuris išeinantis.</li>
@@ -108,6 +130,17 @@
     <li><strong>Tavo įrašai keliauja su tavimi.</strong> Pasidalink vienu įrašu arba eksportuok viską su pastabomis į ZIP ir importuok kitame telefone.</li>
   </ul>
   <p>Skambučių įrašymą skirtingos šalys reglamentuoja skirtingai. Daug kur visi pokalbio dalyviai turi būti informuoti ir sutikti, kad pokalbis įrašomas. Už vietos įstatymų laikymąsi atsakai pats.</p>
+  <h2>Klausimai ir atsakymai</h2>
+  <h3>Kaip Talkvault įrašo skambučius naujose Android versijose?</h3>
+  <p>Nuo Android 10 mikrofoną skambučio metu gali naudoti tik pritaikymo neįgaliesiems (accessibility) paslauga, todėl Talkvault veikia kaip tokia. Ji įrašo garsą ir neskaito to, kas rodoma ekrane.</p>
+  <h3>Kodėl įraše pašnekovas girdisi tyliai?</h3>
+  <p>Android neleidžia programėlėms įrašyti kitos linijos pusės. Talkvault įrašo per mikrofoną, todėl įjunk garsiakalbį ir pašnekovas įsirašys taip pat.</p>
+  <h3>Kur laikomi įrašai?</h3>
+  <p>Programėlės privačioje saugykloje tavo telefone. Talkvault neturi interneto leidimo, todėl įrašas iš telefono iškeliauja tik tada, kai pats juo pasidalini arba jį eksportuoji.</p>
+  <h3>Kaip įdiegti APK?</h3>
+  <p>Atsisiųsk failą mygtuku viršuje ir jį atidaryk. Pirmą kartą Android paprašys leisti diegti iš naršyklės. Android 13 ir naujesnėse versijose gali tekti atidaryti programėlės informacijos langą, paspausti meniu kampe ir leisti apribotus nustatymus („Allow restricted settings“), kad galėtum įjungti įrašymo paslaugą.</p>
+  <h3>Kaip atnaujinti Talkvault?</h3>
+  <p>Atsisiųsk naujesnį APK iš šio puslapio ir įdiek ant senos versijos. Įrašai, pastabos ir nustatymai išlieka.</p>
 </main>
 
 <footer data-swap-lang="footer">Kontaktai: <a href="mailto:info@irondock.dev">info@irondock.dev</a></footer>
