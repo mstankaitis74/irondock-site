@@ -142,6 +142,13 @@ body:not([data-berth="0"]) .berth p { display: none; }
 .facts { list-style: none; padding: 0; margin: 0 0 32px; display: grid; gap: 12px; }
 .facts li { background: var(--card); border-radius: 16px; padding: 16px 20px; }
 .facts strong { color: var(--text); }
+.download { background: var(--card); border-radius: 24px; padding: 24px; margin: 0 0 32px; }
+.download p { margin: 16px 0 0; }
+.button { display: inline-block; padding: 14px 22px; border-radius: 14px; background: var(--accent); color: var(--iron);
+          font-weight: 700; text-decoration: none; }
+.button:hover { filter: brightness(1.08); }
+.hash { font-size: 13px; }
+.hash code { overflow-wrap: anywhere; }
 footer { max-width: 720px; margin: 0 auto; padding: 48px 20px; color: var(--muted); font-size: 14px; }
 
 /* dock.js fades these out, swaps their content for the next page's and fades them back in. */
