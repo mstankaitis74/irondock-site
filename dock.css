@@ -1,8 +1,8 @@
 :root {
   --bg: #081330; --text: #ffffff; --muted: #c9d4f0; --accent: #ff8a7a; --card: rgba(255,255,255,0.06);
   --sky-top: #14295a; --sky-mid: #1d3a72; --sky-horizon: #27498a;
-  --far: #173063; --iron: #0c1838; --iron-edge: #46599a; --lamp-off: #2a3a6b;
-  /* Each berth (app) lights its lamp in its own colour; override --berth per page or per element. */
+  --far: #173063; --iron: #0c1838; --iron-edge: #46599a;
+  /* Each berth (app) has its own lamp colour; set --berth on its nav card, mark and reflection. */
   --berth: var(--accent);
 }
 * { box-sizing: border-box; }
@@ -11,70 +11,125 @@ body { margin: 0; min-height: 100vh; font-family: system-ui, -apple-system, "Seg
 a { color: var(--accent); }
 a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
 
-/* ---- Hero: sky + parallax harbour scene ---- */
-.hero { position: relative; height: 88vh; height: 88svh; min-height: 560px; max-height: 900px; overflow: hidden;
-        background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-horizon) 82%);
-        --scroll: 0; --pointer: 0; }
-.hero--berth { height: 62vh; height: 62svh; min-height: 460px; max-height: 640px; }
-.hero-text { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 72px 20px 0;
+/* ---- Hero: sky + harbour scene ---- */
+.hero { --hero-h: clamp(520px, 68vh, 760px);
+        --scene-h: calc(var(--hero-h) * 0.8);
+        --step: clamp(300px, 34vw, 620px);   /* distance between two berths on the pier */
+        --stations: 3;                        /* number of the last berth; raise it when an app is added */
+        --pad: 300px;                         /* spare scene on both sides for the pointer shift */
+        --cam: 0; --scroll: 0; --pointer: 0;
+        position: relative; height: var(--hero-h); overflow: hidden;
+        background: radial-gradient(ellipse 50% 28% at 50% 88%, rgba(255,138,122,0.16), transparent),
+                    linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-horizon) 82%); }
+@supports (height: 1svh) { .hero { --hero-h: clamp(520px, 68svh, 760px); } }
+
+.hero-text { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 56px 20px 0;
              transform: translate3d(0, calc(var(--scroll) * 0.3px), 0); }
 h1 { font-size: clamp(48px, 8vw, 88px); line-height: 1; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 12px; }
 .lead { color: var(--muted); font-size: 20px; line-height: 1.4; margin: 0; max-width: 34ch; }
 .crumb { color: var(--muted); font-size: 16px; margin: 0 0 20px; }
 
-/* --scroll and --pointer are set by dock.js. Far layers get a high --depth (they lag behind the scroll),
-   near layers a low or negative one; --shift is the sideways travel in px when the pointer moves. */
-.layer { position: absolute; left: 50%; bottom: 0; width: max(112vw, 1150px); height: auto; overflow: visible;
-         pointer-events: none; will-change: transform;
-         transform: translate3d(calc(-50% - var(--pointer) * var(--shift) * 1px), calc(var(--scroll) * var(--depth) * 1px), 0); }
-.layer--sky   { --depth: 0.50; --shift: 4; }
-.layer--far   { --depth: 0.34; --shift: 9;  color: var(--far); }
-.layer--dock  { --depth: 0.18; --shift: 18; color: var(--iron); }
-.layer--water { --depth: 0.08; --shift: 26; }
-.layer--quay  { --depth: -0.12; --shift: 40; color: var(--bg); }
+/* A layer is a strip wider than the hero, tiled with one SVG.
+   --cam (berth number, set inline and by dock.js) slides it sideways: every layer travels its own
+   distance per berth (--f), which is what gives the depth. --scroll and --pointer come from dock.js. */
+.layer { --pan: calc(var(--step) * var(--f));
+         --station0: calc(var(--pad) + (100% - var(--pad) * 2 - var(--pan) * var(--stations)) / 2);
+         position: absolute; bottom: 0; left: calc(var(--pad) * -1); height: var(--scene-h);
+         width: calc(100% + var(--pad) * 2 + var(--pan) * var(--stations));
+         font-size: calc(var(--scene-h) / 70);   /* 1em = 10 units of the 700-unit-high tiles */
+         background-repeat: repeat-x; background-position: left bottom; background-size: auto 100%;
+         pointer-events: none; will-change: translate, transform;
+         translate: calc(var(--cam) * var(--pan) * -1) 0;
+         transition: translate 1.4s cubic-bezier(0.65, 0, 0.2, 1);
+         transform: translate3d(calc(var(--pointer) * var(--shift) * -1px), calc(var(--scroll) * var(--depth) * 1px), 0); }
+/* Solid bands (shore, deck, water, quay) are gradients, not part of the tiles, so tile edges never show. */
+.layer--sky   { --f: 0.05; --depth: 0.50; --shift: 4;  background-image: url(scene/sky.svg); }
+.layer--far   { --f: 0.28; --depth: 0.34; --shift: 9;
+                background-image: url(scene/far.svg), linear-gradient(transparent 78.4%, var(--far) 78.4%);
+                background-repeat: repeat-x, no-repeat; background-size: auto 100%, 100% 100%; }
+.layer--dock  { --f: 1;    --depth: 0.18; --shift: 18;
+                background-image: url(scene/dock.svg),
+                  linear-gradient(transparent 64.57%, var(--iron-edge) 64.57% 64.86%, var(--iron) 64.86% 66.57%,
+                                  transparent 66.57% 72%, var(--iron) 72% 72.86%, transparent 72.86%);
+                background-repeat: repeat-x, no-repeat; background-size: auto 100%, 100% 100%; }
+.layer--water { --f: 1.12; --depth: 0.08; --shift: 26;
+                background-image: url(scene/water.svg),
+                  linear-gradient(transparent 80%, rgba(255,255,255,0.14) 80% 80.2%, #16306a 80.2%, #0b1a40);
+                background-repeat: repeat-x, no-repeat; background-size: auto 100%, 100% 100%; }
+/* The quay rises faster than the page scrolls; the shadow keeps the gap under it filled. */
+.layer--quay  { --f: 1.5;  --depth: -0.12; --shift: 40;
+                background-image: url(scene/quay.svg),
+                  linear-gradient(transparent 93.14%, rgba(255,255,255,0.08) 93.14% 93.43%, var(--bg) 93.43%);
+                background-repeat: repeat-x, no-repeat; background-size: auto 100%, 100% 100%;
+                box-shadow: 0 200px 0 var(--bg); }
 
-.edge { fill: var(--iron-edge); }
-.sign { fill: var(--iron); stroke: var(--iron-edge); stroke-width: 2; }
-.sign-text { fill: var(--muted); text-anchor: middle; font-weight: 800; }
-.sign-label { font-weight: 400; }
-
-.lamp-head { fill: var(--lamp-off); }
-.lamp-glow { display: none; fill: var(--berth); opacity: 0.5; }
-.lit .lamp-head { fill: var(--berth); }
-.lit .lamp-glow { display: inline; animation: var(--lamp-animation, beacon 5s ease-in-out infinite); }
-.reflection { fill: none; stroke: var(--berth); stroke-width: 3; stroke-linecap: round; opacity: 0.45; }
-.wave { fill: none; stroke: rgba(201,212,240,0.16); stroke-width: 2; stroke-linecap: round;
-        animation: drift 60s linear infinite; }
+/* Berth marks stand on the deck, reflections lie on the water; --n is the berth number. */
+.mark, .reflection { position: absolute; left: calc(var(--station0) + var(--n) * var(--pan)); }
+.mark { bottom: 35.43%; }
+.lamp { position: absolute; left: -0.25em; bottom: 0; width: 0.5em; height: 12em; background: var(--iron); }
+.lamp::before { content: ""; position: absolute; left: 50%; top: 0; width: 1.8em; height: 1.8em;
+                translate: -50% -50%; border-radius: 50%; background: var(--berth); }
+.lamp::after { content: ""; position: absolute; left: 50%; top: 0; width: 28em; height: 28em;
+               translate: -50% -50%; opacity: 0.55; background: var(--berth);
+               -webkit-mask-image: radial-gradient(closest-side, #000, rgba(0,0,0,0.45) 30%, rgba(0,0,0,0.12) 65%, transparent);
+               mask-image: radial-gradient(closest-side, #000, rgba(0,0,0,0.45) 30%, rgba(0,0,0,0.12) 65%, transparent);
+               animation: beacon 5s ease-in-out infinite; }
+.lamp--pulse::after { animation: heartbeat 1.2s ease-out infinite; }
+.mark--home .lamp { height: 19em; width: 0.7em; left: -0.35em; }
+.plate { position: absolute; left: 3.2em; bottom: 4.6em; width: 8.6em; padding: 0.5em 0 0.6em;
+         font-size: 1.3em; line-height: 1.1; text-align: center; color: var(--muted);
+         background: var(--iron); border: 0.15em solid var(--iron-edge); border-radius: 0.6em; }
+.plate b { display: block; color: var(--text); font-size: 2.4em; font-weight: 800; }
+.plate::after { content: ""; position: absolute; left: 50%; top: 100%; width: 0.45em; height: 4.75em;
+                translate: -50% 0; background: var(--iron); }
+.reflection { top: 81.5%; width: 5em; height: 10em; translate: -50% 0; opacity: 0.45;
+              background: repeating-linear-gradient(var(--berth) 0 0.35em, transparent 0.35em 1.7em);
+              -webkit-mask-image: radial-gradient(ellipse 50% 100% at 50% 0, #000 35%, transparent);
+              mask-image: radial-gradient(ellipse 50% 100% at 50% 0, #000 35%, transparent); }
 @keyframes beacon { 50% { opacity: 0.2; } }
-/* Dash patterns of the waves add up to 200 or 400, so this offset loops without a jump. */
-@keyframes drift { to { stroke-dashoffset: -400; } }
+@keyframes heartbeat {
+  0%, 30%, 100% { opacity: 0.25; }
+  8% { opacity: 0.75; }
+  16% { opacity: 0.35; }
+  22% { opacity: 0.6; }
+}
 
-/* ---- Content ---- */
-.content { max-width: 720px; margin: 0 auto; padding: 48px 20px 48px; }
-.content p, .content li { color: var(--muted); line-height: 1.6; }
-.intro { font-size: 20px; margin: 0 0 32px; }
-.facts { list-style: none; padding: 0; margin: 0 0 32px; display: grid; gap: 12px; }
-.facts li { background: var(--card); border-radius: 16px; padding: 16px 20px; }
-.facts strong { color: var(--text); }
-
+/* ---- Berth navigation ---- */
+.berths { max-width: 720px; margin: 0 auto; padding: 32px 20px 0; display: grid; gap: 16px; }
 .berth { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center;
          background: var(--card); border-radius: 24px; padding: 24px; color: inherit; text-decoration: none; }
-.berth + .berth { margin-top: 16px; }
-a.berth:hover { background: rgba(255,255,255,0.1); }
+.berth:hover { background: rgba(255,255,255,0.1); }
 .berth h2 { margin: 0 0 6px; font-size: 24px; }
-.berth p { margin: 0; }
+.berth p { margin: 0; color: var(--muted); line-height: 1.5; }
 .berth-plate { display: grid; justify-items: center; gap: 2px; min-width: 76px; padding: 10px 12px;
                border: 2px solid rgba(255,255,255,0.16); border-radius: 12px; color: var(--muted); font-size: 13px; }
 .berth-plate b { color: var(--text); font-size: 28px; line-height: 1; font-weight: 800; }
 .berth-plate::before { content: ""; width: 8px; height: 8px; margin-bottom: 4px; border-radius: 50%;
                        background: var(--berth); box-shadow: 0 0 12px var(--berth); }
-.berth--free { background: none; border: 2px dashed rgba(255,255,255,0.14); }
-.berth--free .berth-plate::before { background: var(--lamp-off); box-shadow: none; }
+.berth[aria-current="page"] { background: rgba(255,255,255,0.1); box-shadow: inset 0 0 0 2px var(--berth); }
+/* On an app page the cards shrink to a row of plates, so the app's own text comes right after. */
+body:not([data-berth="0"]) .berths { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+body:not([data-berth="0"]) .berth { grid-template-columns: 1fr; justify-items: center; gap: 10px;
+                                    padding: 14px 8px; border-radius: 18px; text-align: center; }
+body:not([data-berth="0"]) .berth h2 { margin: 0; font-size: 16px; }
+body:not([data-berth="0"]) .berth p { display: none; }
 
-footer { margin-top: 48px; color: var(--muted); font-size: 14px; }
+/* ---- Page content ---- */
+.content { max-width: 720px; margin: 0 auto; padding: 40px 20px 0; }
+.content p, .content li { color: var(--muted); line-height: 1.6; }
+.intro { font-size: 20px; margin: 0 0 32px; }
+.facts { list-style: none; padding: 0; margin: 0 0 32px; display: grid; gap: 12px; }
+.facts li { background: var(--card); border-radius: 16px; padding: 16px 20px; }
+.facts strong { color: var(--text); }
+footer { max-width: 720px; margin: 0 auto; padding: 48px 20px; color: var(--muted); font-size: 14px; }
+
+/* dock.js fades these out, swaps their content for the next page's and fades them back in. */
+[data-swap] { transition: opacity 0.25s; }
+.is-swapping [data-swap] { opacity: 0; }
 
 @media (prefers-reduced-motion: reduce) {
-  .layer { transform: translateX(-50%); }
+  .layer { transform: none; transition: none; }
   .hero-text { transform: none; }
-  .lit .lamp-glow, .wave { animation: none; }
+  .lamp::after { animation: none; }
+  [data-swap] { transition: none; }
 }
