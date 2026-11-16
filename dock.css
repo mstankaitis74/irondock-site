@@ -66,6 +66,9 @@ h1 { font-size: clamp(48px, 8vw, 88px); line-height: 1; font-weight: 800; letter
 /* Berth marks stand on the deck, reflections lie on the water; --n is the berth number. */
 .mark, .reflection { position: absolute; left: calc(var(--station0) + var(--n) * var(--pan)); }
 .mark { bottom: 35.43%; }
+/* An app's lamp and sign are a link to its berth (same targets as the cards below the scene). */
+a.mark { display: block; color: inherit; text-decoration: none; pointer-events: auto; cursor: pointer; }
+a.mark:hover .plate { border-color: var(--berth); translate: 0 -0.25em; }
 .lamp { position: absolute; left: -0.25em; bottom: 0; width: 0.5em; height: 12em; background: var(--iron); }
 .lamp::before { content: ""; position: absolute; left: 50%; top: 0; width: 1.8em; height: 1.8em;
                 translate: -50% -50%; border-radius: 50%; background: var(--berth); }
@@ -73,12 +76,13 @@ h1 { font-size: clamp(48px, 8vw, 88px); line-height: 1; font-weight: 800; letter
                translate: -50% -50%; opacity: 0.55; background: var(--berth);
                -webkit-mask-image: radial-gradient(closest-side, #000, rgba(0,0,0,0.45) 30%, rgba(0,0,0,0.12) 65%, transparent);
                mask-image: radial-gradient(closest-side, #000, rgba(0,0,0,0.45) 30%, rgba(0,0,0,0.12) 65%, transparent);
-               animation: beacon 5s ease-in-out infinite; }
+               pointer-events: none; animation: beacon 5s ease-in-out infinite; }
 .lamp--pulse::after { animation: heartbeat 1.2s ease-out infinite; }
 .mark--home .lamp { height: 19em; width: 0.7em; left: -0.35em; }
 .plate { position: absolute; left: 3.2em; bottom: 4.6em; width: 8.6em; padding: 0.5em 0 0.6em;
          font-size: 1.3em; line-height: 1.1; text-align: center; color: var(--muted);
-         background: var(--iron); border: 0.15em solid var(--iron-edge); border-radius: 0.6em; }
+         background: var(--iron); border: 0.15em solid var(--iron-edge); border-radius: 0.6em;
+         transition: translate 0.2s, border-color 0.2s; }
 .plate b { display: block; color: var(--text); font-size: 2.4em; font-weight: 800; }
 .plate::after { content: ""; position: absolute; left: 50%; top: 100%; width: 0.45em; height: 4.75em;
                 translate: -50% 0; background: var(--iron); }
@@ -93,6 +97,23 @@ h1 { font-size: clamp(48px, 8vw, 88px); line-height: 1; font-weight: 800; letter
   16% { opacity: 0.35; }
   22% { opacity: 0.6; }
 }
+
+/* ---- Language switch: a signal mast. The flag of the page's language is hoisted to the top;
+        the whole mast is one link to the same page in the other language. ---- */
+.lang { position: absolute; z-index: 2; top: 44px; right: max(20px, calc(50% - 340px)); width: 62px; height: 88px;
+        color: var(--muted); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-decoration: none; }
+.lang::before { content: ""; position: absolute; left: 4px; top: 6px; bottom: 0; width: 3px; border-radius: 2px;
+                background: var(--iron-edge); }
+.lang::after { content: ""; position: absolute; left: 1px; top: 0; width: 9px; height: 9px; border-radius: 50%;
+               background: var(--iron-edge); }
+.flag { position: absolute; left: 7px; top: 12px; width: 52px; height: 26px; padding-right: 9px;
+        display: grid; place-items: center; background: rgba(255,255,255,0.14);
+        clip-path: polygon(0 0, 100% 0, 80% 50%, 100% 100%, 0 100%);
+        transition: translate 0.6s cubic-bezier(0.65, 0, 0.2, 1), background-color 0.6s, color 0.6s; }
+html:lang(en) .flag--en, html:lang(lt) .flag--lt { background: var(--accent); color: var(--iron); }
+html:lang(en) .flag--lt, html:lang(lt) .flag--en { translate: 0 32px; }
+.lang:hover .flag { background: rgba(255,255,255,0.3); }
+html:lang(en) .lang:hover .flag--en, html:lang(lt) .lang:hover .flag--lt { background: var(--accent); }
 
 /* ---- Berth navigation ---- */
 .berths { max-width: 720px; margin: 0 auto; padding: 32px 20px 0; display: grid; gap: 16px; }
@@ -131,5 +152,5 @@ footer { max-width: 720px; margin: 0 auto; padding: 48px 20px; color: var(--mute
   .layer { transform: none; transition: none; }
   .hero-text { transform: none; }
   .lamp::after { animation: none; }
-  [data-swap] { transition: none; }
+  [data-swap], .flag, .plate { transition: none; }
 }
