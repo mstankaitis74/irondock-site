@@ -64,6 +64,12 @@ h1 { font-size: clamp(48px, 8vw, 88px); line-height: 1; font-weight: 800; letter
                 background-repeat: repeat-x, no-repeat; background-size: auto 100%, 100% 100%;
                 box-shadow: 0 200px 0 var(--bg); }
 
+/* Swiping on a touch screen (dock.js): the scene follows the finger, then settles on the nearest berth. */
+.hero, .berths { touch-action: pan-y; }
+.hero.is-dragging { -webkit-user-select: none; user-select: none; }
+.hero.is-dragging .layer { transition: none; }
+.hero.is-settling .layer { transition-duration: 0.45s; transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
+
 /* Berth marks stand on the deck, reflections lie on the water; --n is the berth number. */
 .mark, .reflection { position: absolute; left: calc(var(--station0) + var(--n) * var(--pan)); }
 .mark { bottom: 35.43%; }

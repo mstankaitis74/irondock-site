@@ -122,11 +122,72 @@
     });
   }
 
+  // ---- Swipe between berths on a touch screen ----
+  // A sideways drag on the scene or the berth list moves the camera with the finger. Letting go past a
+  // quarter of the way, or with a flick, travels to the neighbouring berth; otherwise the scene goes back.
+  const lastBerth = Number(getComputedStyle(hero).getPropertyValue('--stations'));
+  const mark = (berth) => hero.querySelector(`.mark[data-berth="${berth}"]`);
+  let drag = null;
+  let draggedAt = 0;
+
+  const settle = (cam) => {
+    hero.classList.remove('is-dragging');
+    hero.classList.add('is-settling');
+    hero.style.setProperty('--cam', cam);
+    setTimeout(() => hero.classList.remove('is-settling'), 500);
+  };
+
+  const startDrag = (event) => {
+    if (event.pointerType === 'mouse' || !event.isPrimary) return;
+    drag = {
+      id: event.pointerId, startX: event.clientX, startY: event.clientY, lastX: event.clientX, lastTime: event.timeStamp,
+      from: Number(document.body.dataset.berth), step: mark(1).offsetLeft - mark(0).offsetLeft, moved: 0, speed: 0, active: false,
+    };
+  };
+  hero.addEventListener('pointerdown', startDrag);
+  document.querySelector('.berths')?.addEventListener('pointerdown', startDrag);
+
+  addEventListener('pointermove', (event) => {
+    if (!drag || event.pointerId !== drag.id) return;
+    const dx = event.clientX - drag.startX;
+    if (!drag.active) {
+      // Vertical movement is the page scrolling (touch-action: pan-y); only a sideways drag takes the scene.
+      if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(event.clientY - drag.startY)) return;
+      drag.active = true;
+      hero.classList.add('is-dragging');
+    }
+    drag.speed = (event.clientX - drag.lastX) / Math.max(event.timeStamp - drag.lastTime, 1);   // px per ms
+    drag.lastX = event.clientX;
+    drag.lastTime = event.timeStamp;
+    drag.moved = -dx / drag.step;   // in berths; positive = towards the next berth
+    let cam = drag.from + drag.moved;
+    // Past either end of the dock the scene resists: it follows at a third of the finger's travel.
+    if (cam < 0) cam /= 3;
+    if (cam > lastBerth) cam = lastBerth + (cam - lastBerth) / 3;
+    hero.style.setProperty('--cam', cam.toFixed(4));
+  });
+
+  const endDrag = (event) => {
+    if (!drag || event.pointerId !== drag.id) return;
+    const { active, from, moved, speed } = drag;
+    drag = null;
+    if (!active) return;
+    draggedAt = event.timeStamp;
+    const flick = Math.abs(speed) > 0.5 && Math.sign(-speed) === Math.sign(moved);
+    const travel = event.type === 'pointerup' && (Math.abs(moved) > 0.25 || flick) ? Math.sign(moved) : 0;
+    const target = Math.min(Math.max(from + travel, 0), lastBerth);
+    settle(target);
+    if (target !== from) visit(mark(target).href, true);
+  };
+  addEventListener('pointerup', endDrag);
+  addEventListener('pointercancel', endDrag);
+
   document.addEventListener('click', (event) => {
     const link = event.target.closest('a[data-nav]');
     const plainClick = event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
     if (!link || !plainClick) return;
     event.preventDefault();
+    if (event.timeStamp - draggedAt < 400) return;   // the finger was lifted after a drag, not a tap
     if (link.href !== location.href) visit(link.href, true);
   });
   addEventListener('popstate', () => visit(location.href, false));
