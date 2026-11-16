@@ -5,33 +5,133 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Irondock</title>
 <meta name="description" content="Irondock – small, simple apps.">
-<style>
-  :root { --bg: #0f1f45; --text: #ffffff; --muted: #c9d4f0; --accent: #ff8a7a; --card: rgba(255,255,255,0.06); }
-  * { box-sizing: border-box; }
-  body { margin: 0; min-height: 100vh; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-         background: linear-gradient(150deg, #1d3a72 0%, #0f1f45 55%, #081330 100%); color: var(--text); }
-  main { max-width: 720px; margin: 0 auto; padding: 72px 20px; }
-  h1 { font-size: 48px; margin: 0 0 8px; letter-spacing: -0.5px; }
-  .lead { color: var(--muted); font-size: 20px; margin: 0 0 48px; }
-  .app { background: var(--card); border-radius: 24px; padding: 24px; }
-  .app h2 { margin: 0 0 6px; font-size: 24px; }
-  .app p { margin: 0 0 16px; color: var(--muted); line-height: 1.5; }
-  a { color: var(--accent); }
-  footer { margin-top: 48px; color: var(--muted); font-size: 14px; }
-</style>
+<link rel="stylesheet" href="dock.css">
 </head>
 <body>
-<main>
-  <h1>Irondock</h1>
-  <p class="lead">Small, simple apps that respect your time and your data.</p>
+<header class="hero">
+  <svg class="layer layer--sky" viewBox="0 0 1600 700" aria-hidden="true">
+    <defs>
+      <radialGradient id="harbour-glow">
+        <stop offset="0" stop-color="#ff8a7a" stop-opacity="0.2"/>
+        <stop offset="1" stop-color="#ff8a7a" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="800" cy="570" rx="760" ry="190" fill="url(#harbour-glow)"/>
+    <g fill="#fff">
+      <circle cx="92" cy="64" r="1.4" opacity="0.8"/><circle cx="188" cy="170" r="1" opacity="0.5"/>
+      <circle cx="260" cy="36" r="1.1" opacity="0.7"/><circle cx="345" cy="118" r="1.5" opacity="0.6"/>
+      <circle cx="430" cy="210" r="0.9" opacity="0.5"/><circle cx="512" cy="58" r="1.2" opacity="0.9"/>
+      <circle cx="590" cy="150" r="1" opacity="0.6"/><circle cx="668" cy="28" r="1.4" opacity="0.7"/>
+      <circle cx="742" cy="104" r="0.9" opacity="0.5"/><circle cx="815" cy="196" r="1.2" opacity="0.6"/>
+      <circle cx="884" cy="52" r="1" opacity="0.8"/><circle cx="958" cy="138" r="1.5" opacity="0.7"/>
+      <circle cx="1040" cy="24" r="1" opacity="0.6"/><circle cx="1110" cy="92" r="1.2" opacity="0.5"/>
+      <circle cx="1186" cy="180" r="0.9" opacity="0.6"/><circle cx="1262" cy="60" r="1.4" opacity="0.9"/>
+      <circle cx="1335" cy="132" r="1" opacity="0.5"/><circle cx="1410" cy="40" r="1.2" opacity="0.7"/>
+      <circle cx="1478" cy="166" r="1.5" opacity="0.6"/><circle cx="1548" cy="88" r="1" opacity="0.8"/>
+    </g>
+  </svg>
 
-  <section class="app">
-    <h2>Beatsy</h2>
-    <p>Check your heart rate with your phone camera. Ads never interrupt a measurement, and your data stays on your phone.</p>
-    <a href="/beatsy/privacy/">Privacy policy</a>
-  </section>
+  <svg class="layer layer--far" viewBox="0 0 1600 700" aria-hidden="true">
+    <defs>
+      <g id="crane" fill="none" stroke="currentColor" stroke-linecap="round">
+        <path stroke-width="7" d="M0 80H200M50 92H130"/>
+        <path stroke-width="5" d="M62 220V92M118 220V92M62 180L118 130M118 180L62 130"/>
+        <path stroke-width="3" d="M90 18L62 90M90 18L118 90M90 18L8 78M90 18L192 78M162 80V118"/>
+        <rect x="150" y="118" width="24" height="8" fill="currentColor" stroke="none"/>
+      </g>
+    </defs>
+    <use href="#crane" transform="translate(150 385) scale(0.75)"/>
+    <use href="#crane" transform="translate(430 330)"/>
+    <use href="#crane" transform="translate(700 374) scale(0.8)"/>
+    <use href="#crane" transform="translate(1130 308) scale(1.1)"/>
+    <!-- far shore with container stacks -->
+    <path fill="currentColor" d="M-100 548H1700V760H-100ZM40 524h70v24h-70zM110 536h50v12h-50zM300 530h90v18h-90zM560 522h60v26h-60zM620 534h44v14h-44zM900 528h110v20h-110zM1010 538h40v10h-40zM1330 520h80v28h-80zM1410 532h60v16h-60z"/>
+  </svg>
+
+  <svg class="layer layer--dock" viewBox="0 0 1600 700" aria-hidden="true">
+    <defs>
+      <pattern id="truss" x="-50" y="466" width="80" height="40" patternUnits="userSpaceOnUse">
+        <path d="M0 40L40 0L80 40" fill="none" stroke="currentColor" stroke-width="5"/>
+      </pattern>
+      <pattern id="rivets" x="-50" y="452" width="24" height="14" patternUnits="userSpaceOnUse">
+        <circle class="edge" cx="12" cy="8" r="1.6"/>
+      </pattern>
+      <radialGradient id="fade"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#000"/></radialGradient>
+      <mask id="glow" maskContentUnits="objectBoundingBox"><rect width="1" height="1" fill="url(#fade)"/></mask>
+    </defs>
+    <!-- pilings, truss, deck -->
+    <path fill="currentColor" d="M30 466h18v290h-18zM190 466h18v290h-18zM350 466h18v290h-18zM510 466h18v290h-18zM670 466h18v290h-18zM830 466h18v290h-18zM992 440h22v316h-22z"/>
+    <rect x="-50" y="466" width="1042" height="40" fill="url(#truss)"/>
+    <rect x="-50" y="504" width="1056" height="6" fill="currentColor"/>
+    <rect x="-50" y="452" width="1064" height="14" fill="currentColor"/>
+    <rect x="-50" y="452" width="1064" height="14" fill="url(#rivets)"/>
+    <rect class="edge" x="-50" y="452" width="1064" height="2"/>
+    <path fill="currentColor" d="M232 452v-12h-4v-5h22v5h-4v12zM442 452v-12h-4v-5h22v5h-4v12z"/>
+
+    <!-- One lamp per berth. Add class "lit" (and a --berth colour) when an app moors there. -->
+    <g class="lamp lit" transform="translate(680 452)">
+      <rect x="-2.5" y="-84" width="5" height="84" fill="currentColor"/>
+      <circle class="lamp-glow" cy="-88" r="70" mask="url(#glow)"/>
+      <circle class="lamp-head" cy="-88" r="5.5"/>
+    </g>
+    <g class="lamp" transform="translate(820 452)">
+      <rect x="-2.5" y="-84" width="5" height="84" fill="currentColor"/>
+      <circle class="lamp-glow" cy="-88" r="70" mask="url(#glow)"/>
+      <circle class="lamp-head" cy="-88" r="5.5"/>
+    </g>
+    <g class="lamp" transform="translate(960 452)">
+      <rect x="-2.5" y="-84" width="5" height="84" fill="currentColor"/>
+      <circle class="lamp-glow" cy="-88" r="70" mask="url(#glow)"/>
+      <circle class="lamp-head" cy="-88" r="5.5"/>
+    </g>
+  </svg>
+
+  <svg class="layer layer--water" viewBox="0 0 1600 700" aria-hidden="true">
+    <defs>
+      <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#16306a"/><stop offset="1" stop-color="#0b1a40"/>
+      </linearGradient>
+    </defs>
+    <rect x="-100" y="560" width="1800" height="260" fill="url(#water)"/>
+    <rect x="-100" y="560" width="1800" height="1.5" fill="#fff" opacity="0.14"/>
+    <!-- reflection of each lit lamp, at the same x as the lamp -->
+    <path class="reflection" transform="translate(680 0)" d="M-14 572h28M-20 584h40M-10 598h20M-18 614h36M-8 632h16"/>
+    <path class="wave" stroke-dasharray="70 130" d="M-100 578H1700"/>
+    <path class="wave" stroke-dasharray="110 290" d="M-100 594H1700" style="animation-duration: 80s"/>
+    <path class="wave" stroke-dasharray="40 160" d="M-100 612H1700" style="animation-duration: 45s"/>
+    <path class="wave" stroke-dasharray="150 250" d="M-100 634H1700" style="animation-duration: 70s"/>
+  </svg>
+
+  <svg class="layer layer--quay" viewBox="0 0 1600 700" aria-hidden="true">
+    <path fill="currentColor" d="M-100 652H1700V900H-100ZM866 566h88a9 9 0 0 1 0 18h-14c0 26 6 40 10 68h-80c4-28 10-42 10-68h-14a9 9 0 0 1 0-18z"/>
+    <path fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" d="M928 606C1100 684 1400 654 1700 584"/>
+    <rect x="-100" y="652" width="1800" height="2" fill="#fff" opacity="0.08"/>
+  </svg>
+
+  <div class="hero-text">
+    <h1>Irondock</h1>
+    <p class="lead">Small, simple apps that respect your time and your data.</p>
+  </div>
+</header>
+
+<main class="content">
+  <a class="berth" href="beatsy/">
+    <div class="berth-plate">Berth <b>01</b></div>
+    <div>
+      <h2>Beatsy</h2>
+      <p>Check your heart rate with your phone camera. Ads never interrupt a measurement, and your data stays on your phone.</p>
+    </div>
+  </a>
+  <div class="berth berth--free">
+    <div class="berth-plate">Berth <b>02</b></div>
+    <div>
+      <h2>Free berth</h2>
+      <p>The next app is being built.</p>
+    </div>
+  </div>
 
   <footer>Contact: <a href="mailto:info@irondock.dev">info@irondock.dev</a></footer>
 </main>
+<script src="dock.js"></script>
 </body>
 </html>

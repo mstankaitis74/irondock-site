@@ -1,0 +1,80 @@
+:root {
+  --bg: #081330; --text: #ffffff; --muted: #c9d4f0; --accent: #ff8a7a; --card: rgba(255,255,255,0.06);
+  --sky-top: #14295a; --sky-mid: #1d3a72; --sky-horizon: #27498a;
+  --far: #173063; --iron: #0c1838; --iron-edge: #46599a; --lamp-off: #2a3a6b;
+  /* Each berth (app) lights its lamp in its own colour; override --berth per page or per element. */
+  --berth: var(--accent);
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+       background: var(--bg); color: var(--text); }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+/* ---- Hero: sky + parallax harbour scene ---- */
+.hero { position: relative; height: 88vh; height: 88svh; min-height: 560px; max-height: 900px; overflow: hidden;
+        background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-horizon) 82%);
+        --scroll: 0; --pointer: 0; }
+.hero--berth { height: 62vh; height: 62svh; min-height: 460px; max-height: 640px; }
+.hero-text { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 72px 20px 0;
+             transform: translate3d(0, calc(var(--scroll) * 0.3px), 0); }
+h1 { font-size: clamp(48px, 8vw, 88px); line-height: 1; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 12px; }
+.lead { color: var(--muted); font-size: 20px; line-height: 1.4; margin: 0; max-width: 34ch; }
+.crumb { color: var(--muted); font-size: 16px; margin: 0 0 20px; }
+
+/* --scroll and --pointer are set by dock.js. Far layers get a high --depth (they lag behind the scroll),
+   near layers a low or negative one; --shift is the sideways travel in px when the pointer moves. */
+.layer { position: absolute; left: 50%; bottom: 0; width: max(112vw, 1150px); height: auto; overflow: visible;
+         pointer-events: none; will-change: transform;
+         transform: translate3d(calc(-50% - var(--pointer) * var(--shift) * 1px), calc(var(--scroll) * var(--depth) * 1px), 0); }
+.layer--sky   { --depth: 0.50; --shift: 4; }
+.layer--far   { --depth: 0.34; --shift: 9;  color: var(--far); }
+.layer--dock  { --depth: 0.18; --shift: 18; color: var(--iron); }
+.layer--water { --depth: 0.08; --shift: 26; }
+.layer--quay  { --depth: -0.12; --shift: 40; color: var(--bg); }
+
+.edge { fill: var(--iron-edge); }
+.sign { fill: var(--iron); stroke: var(--iron-edge); stroke-width: 2; }
+.sign-text { fill: var(--muted); text-anchor: middle; font-weight: 800; }
+.sign-label { font-weight: 400; }
+
+.lamp-head { fill: var(--lamp-off); }
+.lamp-glow { display: none; fill: var(--berth); opacity: 0.5; }
+.lit .lamp-head { fill: var(--berth); }
+.lit .lamp-glow { display: inline; animation: var(--lamp-animation, beacon 5s ease-in-out infinite); }
+.reflection { fill: none; stroke: var(--berth); stroke-width: 3; stroke-linecap: round; opacity: 0.45; }
+.wave { fill: none; stroke: rgba(201,212,240,0.16); stroke-width: 2; stroke-linecap: round;
+        animation: drift 60s linear infinite; }
+@keyframes beacon { 50% { opacity: 0.2; } }
+/* Dash patterns of the waves add up to 200 or 400, so this offset loops without a jump. */
+@keyframes drift { to { stroke-dashoffset: -400; } }
+
+/* ---- Content ---- */
+.content { max-width: 720px; margin: 0 auto; padding: 48px 20px 48px; }
+.content p, .content li { color: var(--muted); line-height: 1.6; }
+.intro { font-size: 20px; margin: 0 0 32px; }
+.facts { list-style: none; padding: 0; margin: 0 0 32px; display: grid; gap: 12px; }
+.facts li { background: var(--card); border-radius: 16px; padding: 16px 20px; }
+.facts strong { color: var(--text); }
+
+.berth { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center;
+         background: var(--card); border-radius: 24px; padding: 24px; color: inherit; text-decoration: none; }
+.berth + .berth { margin-top: 16px; }
+a.berth:hover { background: rgba(255,255,255,0.1); }
+.berth h2 { margin: 0 0 6px; font-size: 24px; }
+.berth p { margin: 0; }
+.berth-plate { display: grid; justify-items: center; gap: 2px; min-width: 76px; padding: 10px 12px;
+               border: 2px solid rgba(255,255,255,0.16); border-radius: 12px; color: var(--muted); font-size: 13px; }
+.berth-plate b { color: var(--text); font-size: 28px; line-height: 1; font-weight: 800; }
+.berth-plate::before { content: ""; width: 8px; height: 8px; margin-bottom: 4px; border-radius: 50%;
+                       background: var(--berth); box-shadow: 0 0 12px var(--berth); }
+.berth--free { background: none; border: 2px dashed rgba(255,255,255,0.14); }
+.berth--free .berth-plate::before { background: var(--lamp-off); box-shadow: none; }
+
+footer { margin-top: 48px; color: var(--muted); font-size: 14px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .layer { transform: translateX(-50%); }
+  .hero-text { transform: none; }
+  .lit .lamp-glow, .wave { animation: none; }
+}
