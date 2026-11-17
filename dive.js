@@ -5,14 +5,17 @@
 // alive is worth eating: a firefly for its points; once in a while a beetle, which also keeps the fish safe
 // for a few seconds; and a caterpillar, worth the most, after which the fish is so small for a while that
 // even the small fry swallow it.
-// dock.js fetches this file only when the game is found (five quick clicks on a buoy or on one spot under the
-// water, or the word "fish" typed anywhere) and calls dive(). The styles are in dock.css (.dive).
+// It is steered with the mouse (the fish goes where the pointer is), the arrow keys, or a finger: a stick comes
+// up wherever the finger is put down, so the hand need not be where the fish is. Which of them it is shows in
+// each event; nothing has to guess what kind of device this is.
+// dock.js fetches this file only when the game is found (five clicks within four seconds on a buoy or on one
+// spot under the water, or the word "fish" typed anywhere) and calls dive(). The styles are in dock.css (.dive).
 
 const WORDS = {
   en: {
     name: 'A game under the water',
     hint: 'Steer with the mouse or the arrow keys. Keep clear of bigger fish, junk and hooks; eat the bugs that fall in.',
-    touch: 'Drag anywhere to swim. Keep clear of bigger fish, junk and hooks; eat the bugs that fall in.',
+    touch: 'Hold a finger down and drag: the fish swims that way. Keep clear of bigger fish, junk and hooks; eat the bugs.',
     score: 'Score', best: 'Best', newBest: 'New best!', died: 'You died',
     again: 'Again', leave: 'Leave', close: 'Leave the game (Esc)',
     shield: 'Bubble', small: 'Tiny',
@@ -20,7 +23,7 @@ const WORDS = {
   lt: {
     name: 'Žaidimas po vandeniu',
     hint: 'Valdyk pele arba rodyklėmis. Saugokis didesnių žuvų, šiukšlių ir kabliukų, o įkritusius vabalus valgyk.',
-    touch: 'Vesk pirštu bet kur ekrane. Saugokis didesnių žuvų, šiukšlių ir kabliukų, o įkritusius vabalus valgyk.',
+    touch: 'Laikyk pirštą ir tempk: žuvis plauks ta kryptimi. Saugokis didesnių žuvų, šiukšlių ir kabliukų, o vabalus valgyk.',
     score: 'Taškai', best: 'Rekordas', newBest: 'Naujas rekordas!', died: 'Tu žuvai',
     again: 'Dar kartą', leave: 'Išeiti', close: 'Išeiti iš žaidimo (Esc)',
     shield: 'Burbulas', small: 'Mažytė',
@@ -119,6 +122,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
   let hookReach = 0;   // how near a hook the fish may come
   let flySize = 0;     // the length of a firefly
   let bugSize = 0;     // the length of a beetle; a caterpillar is nearly twice as long
+  let stickReach = 0;  // how far the stick under a finger goes
   const resize = () => {
     const ratio = Math.min(devicePixelRatio || 1, 2);
     width = box.clientWidth;
@@ -134,6 +138,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     hookReach = unit * 1.35;
     flySize = Math.max(unit * 0.3, 11);
     bugSize = Math.max(unit * 0.5, 17);
+    stickReach = clamp(reach * 0.13, 40, 60);
   };
   resize();
 
@@ -153,7 +158,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
   let powers = {};      // seconds left of the bubble and of being small
   let current = null;   // the current that is pushing, if one is
   let trail = 0;        // how far it has swum since its last bubble
-  let finger = null;    // the finger that steers
+  let finger = null;    // the finger that steers: where its stick stands and where the finger is now
   let sinceFish = 0;
   let untilFry = 0;
   let untilJunk = 0;
@@ -290,7 +295,8 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       ctx.quadraticCurveTo(0, 30, 31, 25);
       marks();
     } else if (kind === 'can') {
-      ctx.roundRect(-26, -34, 52, 80, 6);
+      if (ctx.roundRect) ctx.roundRect(-26, -34, 52, 80, 6);
+      else ctx.rect(-26, -34, 52, 80);   // an older browser draws its corners square
       solid();
       ctx.beginPath();
       ctx.ellipse(-6, -42, 28, 8, -0.3, 0, TAU);   // the lid, bent open
@@ -715,6 +721,14 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       push.x += (flow.x * flow.force * reach * 0.28 - push.x) * Math.min(dt * 4, 1);
       push.y += (flow.y * flow.force * reach * 0.28 - push.y) * Math.min(dt * 4, 1);
 
+      // A finger works a stick that stands where it was put down: the further it is pushed, the faster the fish
+      // swims that way.
+      const lean = finger ? Math.hypot(finger.x - finger.fromX, finger.y - finger.fromY) : 0;
+      if (lean > stickReach * 0.1) {
+        const pace = Math.min(lean / stickReach, 1) ** 1.3 * reach * 1.3 * dt / lean;
+        me.toX += (finger.x - finger.fromX) * pace;
+        me.toY += (finger.y - finger.fromY) * pace;
+      }
       const swim = reach * 1.1 * dt;
       if (keys.has('left')) me.toX -= swim;
       if (keys.has('right')) me.toX += swim;
@@ -1043,6 +1057,19 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       ctx.arc(bubble.x, bubble.y, bubble.size, 0, TAU);
       ctx.stroke();
     }
+    if (finger && state === 'play') {
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(255,255,255,0.32)';
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.beginPath();
+      ctx.arc(finger.fromX, finger.fromY, stickReach, 0, TAU);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.beginPath();
+      ctx.arc(finger.x, finger.y, stickReach * 0.42, 0, TAU);
+      ctx.fill();
+    }
     ctx.font = `700 ${Math.round(clamp(unit * 0.34, 13, 18))}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
     ctx.textAlign = 'center';
     for (const note of notes) {
@@ -1051,22 +1078,26 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     }
   };
 
-  // ---- Steering: the mouse (the fish goes where the pointer is), a finger (the fish moves as the finger
-  //      does, wherever on the screen that is, so the hand never covers it) or the keys ----
+  // ---- Steering: the mouse (the fish goes where the pointer is), a finger (a stick where it is put down;
+  //      the first finger only) or the keys ----
   const steer = (event) => {
     if (state !== 'play') return;
-    if (event.pointerType === 'touch') {
-      if (event.type === 'pointerdown') {
-        finger ??= { id: event.pointerId, x: event.clientX, y: event.clientY };
-      } else if (finger?.id === event.pointerId) {
-        me.toX += (event.clientX - finger.x) * 1.3;
-        me.toY += (event.clientY - finger.y) * 1.3;
-        Object.assign(finger, { x: event.clientX, y: event.clientY });
+    const place = box.getBoundingClientRect();
+    const x = event.clientX - place.left;
+    const y = event.clientY - place.top;
+    if (event.pointerType !== 'touch') {
+      me.toX = x;
+      me.toY = y;
+    } else if (event.type === 'pointerdown') {
+      if (!finger && !event.target.closest('button')) finger = { id: event.pointerId, fromX: x, fromY: y, x, y };
+    } else if (finger?.id === event.pointerId) {
+      // The stick comes along when the finger goes past its reach, so that turning back answers at once.
+      const lean = Math.hypot(x - finger.fromX, y - finger.fromY);
+      if (lean > stickReach) {
+        finger.fromX = x - (x - finger.fromX) / lean * stickReach;
+        finger.fromY = y - (y - finger.fromY) / lean * stickReach;
       }
-    } else {
-      const place = box.getBoundingClientRect();
-      me.toX = event.clientX - place.left;
-      me.toY = event.clientY - place.top;
+      Object.assign(finger, { x, y });
     }
     box.classList.add('is-quiet');
   };

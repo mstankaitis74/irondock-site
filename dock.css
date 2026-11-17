@@ -113,6 +113,9 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
 
 /* Swiping on a touch screen (dock.js): the scene follows the finger, then settles on the nearest berth. */
 .hero { touch-action: pan-y; }
+/* Taps on the scene and under the water are taps: no highlight, and no waiting to see whether two make a zoom. */
+.hero, .depths { -webkit-tap-highlight-color: transparent; }
+.depths { touch-action: manipulation; }
 .hero.is-dragging { -webkit-user-select: none; user-select: none; }
 .hero.is-dragging .layer { transition: none; }
 .hero.is-settling .layer { transition-duration: 0.45s; transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }

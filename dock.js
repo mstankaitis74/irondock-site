@@ -535,8 +535,8 @@
   };
 
   // ---- The hidden game ----
-  // Five quick clicks on a buoy or on one spot under the water, or the word "fish" typed anywhere, take the
-  // view down under the water, where dive.js runs a short game. Nothing on the page points to it, and the
+  // Five clicks within four seconds on a buoy or on one spot under the water, or the word "fish" typed anywhere,
+  // take the view down under the water, where dive.js runs a short game. Nothing on the page points to it, and the
   // file is fetched only then.
   let game = null;
   const dive = () => {
@@ -568,20 +568,40 @@
     return nearest;
   };
 
-  // A press that turns into a drag (a swipe, a text selection, the slider) is not a click on the scene.
+  // The buoy whose middle is within reach of a tap; the nearest, if there are several.
+  const buoyNear = (clientX, clientY, reach) => {
+    let nearest = null;
+    for (const buoy of surf.querySelectorAll('.buoy')) {
+      const place = buoy.getBoundingClientRect();
+      const distance = Math.hypot(place.left + place.width / 2 - clientX, place.top + place.height / 2 - clientY);
+      if (distance < reach) [nearest, reach] = [buoy, distance];
+    }
+    return nearest;
+  };
+
+  // Safari on a phone makes a click only where something below the document listens for one. The scene and the
+  // water under it do, so that the handlers on the document get every tap.
+  for (const part of [hero, document.querySelector('.depths')]) part?.addEventListener('click', () => {});
+
+  // A press that turns into a drag (a swipe, a text selection, the slider) is not a click on the scene. A
+  // finger is allowed more than a mouse: it rolls as it taps, and a real drag of a finger makes no click at all.
   let pressedAt = null;
-  addEventListener('pointerdown', (event) => { pressedAt = [event.clientX, event.clientY]; }, { capture: true, passive: true });
+  let byFinger = false;
+  addEventListener('pointerdown', (event) => {
+    pressedAt = [event.clientX, event.clientY];
+    byFinger = event.pointerType === 'touch';
+  }, { capture: true, passive: true });
   document.addEventListener('click', (event) => {
     const target = event.target;
     if (root.classList.contains('is-paused') || !target.closest || target.closest('a, button, input')) return;
-    if (pressedAt && Math.hypot(event.clientX - pressedAt[0], event.clientY - pressedAt[1]) > 8) return;
+    if (pressedAt && Math.hypot(event.clientX - pressedAt[0], event.clientY - pressedAt[1]) > (byFinger ? 30 : 8)) return;
     if (String(getSelection())) return;
     const { clientX, clientY } = event;
 
     if (target.closest('.depths')) {
       if (!reducedMotion) bubbles(clientX, clientY);
       playEffect('bubbles', clientX);
-      taps = [...taps.filter(([at, x, y]) => event.timeStamp - at < 2500 && Math.hypot(x - clientX, y - clientY) < 90),
+      taps = [...taps.filter(([at, x, y]) => event.timeStamp - at < 4000 && Math.hypot(x - clientX, y - clientY) < (byFinger ? 120 : 90)),
         [event.timeStamp, clientX, clientY]];
       if (taps.length >= 5) {
         taps = [];
@@ -595,7 +615,8 @@
     const x = clientX - box.left;
     const y = clientY - box.top;
 
-    const buoy = target.closest('.buoy');
+    // A finger need not land right on a buoy: one is small under it, and it rocks.
+    const buoy = target.closest('.buoy') ?? (byFinger ? buoyNear(clientX, clientY, Math.max(9 * em, 52)) : null);
     if (buoy) {
       const place = buoy.getBoundingClientRect();
       if (!reducedMotion) {
@@ -604,7 +625,7 @@
         ripple(place.left + place.width / 2, place.top + place.height * 0.86, 1.1);
       }
       playEffect('bell', clientX);
-      bells = [...bells.filter((at) => event.timeStamp - at < 2500), event.timeStamp];
+      bells = [...bells.filter((at) => event.timeStamp - at < 4000), event.timeStamp];
       if (bells.length >= 5) {
         bells = [];
         dive();
