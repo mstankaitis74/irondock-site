@@ -75,6 +75,8 @@
 html { background: var(--sky-1); }
 body { margin: 0; min-height: 100vh; display: flex; flex-direction: column;
        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--deep-2); color: var(--text); }
+/* Text on the page cannot be selected. The APK checksum can, in one click: it is there to be copied. */
+body { -webkit-user-select: none; user-select: none; }
 a { color: var(--link); }
 a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
 
@@ -396,7 +398,7 @@ body:not([data-berth="0"]) .berth[aria-current="page"] strong { text-decoration:
           font-weight: 700; text-decoration: none; }
 .button:hover { filter: brightness(1.08); }
 .hash { font-size: 13px; }
-.hash code { overflow-wrap: anywhere; }
+.hash code { overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
 /* Fish pass behind the text; where the browser can, they swim as the page scrolls (see the end of this file). */
 .content::before, .content::after { content: ""; position: absolute; z-index: -1; aspect-ratio: 52 / 22; pointer-events: none;
                                     background: rgba(255,255,255,.17); -webkit-mask: var(--art-fish) 0 0 / 100% 100% no-repeat; mask: var(--art-fish) 0 0 / 100% 100% no-repeat; }

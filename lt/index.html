@@ -28,7 +28,7 @@ t=d.getHours()+d.getMinutes()/60-12.4-z,s=Math.abs(t);return s<h-.7?"day":s<h+.7
 var o;try{o=sessionStorage.getItem("sky")}catch(e){}
 window.skyNow=now;document.documentElement.dataset.sky=/^(dawn|day|dusk|night)$/.test(o)?o:now()})()
 </script>
-<link rel="stylesheet" href="../dock.css?v=8">
+<link rel="stylesheet" href="../dock.css?v=10">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -36,7 +36,11 @@ window.skyNow=now;document.documentElement.dataset.sky=/^(dawn|day|dusk|night)$/
   "name": "Irondock",
   "url": "https://irondock.dev/lt/",
   "description": "Mažos, paprastos programėlės, kurios gerbia tavo laiką ir duomenis.",
-  "inLanguage": "lt"
+  "inLanguage": "lt",
+  "alternateName": [
+    "Iron Dock",
+    "irondock.dev"
+  ]
 }
 </script>
 </head>
@@ -110,13 +114,13 @@ window.skyNow=now;document.documentElement.dataset.sky=/^(dawn|day|dusk|night)$/
 </nav>
 
 <main class="content" data-swap="main">
-  <p>Irondock – tai vardas, po kuriuo gyvena kelios mažos Android programėlės. Kiekviena daro vieną darbą, veikia be paskyros ir laiko duomenis tavo telefone. Kiekviena turi savo krantinę doke: pasirink ją aukščiau.</p>
+  <p>Irondock (rašoma ir Iron Dock) – tai vardas, po kuriuo gyvena kelios mažos Android programėlės. Kiekviena daro vieną darbą, veikia be paskyros ir laiko duomenis tavo telefone. Kiekviena turi savo krantinę doke: pasirink ją aukščiau.</p>
   <h2>Programėlės</h2>
   <p><a href="../lt/beatsy/" data-nav>Beatsy</a> – pulso matuoklis, kuris pulsą nuskaito telefono kamera. <a href="../lt/zalias-ket/" data-nav>Žalias KET</a> – KET testai, teorijos pamokos ir visi kelio ženklai pasiruošti vairavimo teorijos egzaminui. <a href="../lt/talkvault/" data-nav>Talkvault</a> – automatinis skambučių įrašymas Android telefone, atsisiunčiamas čia kaip APK.</p>
 </main>
 
 <footer data-swap-lang="footer">Kontaktai: <a href="mailto:info@irondock.dev">info@irondock.dev</a></footer>
 </div>
-<script src="../dock.js?v=8"></script>
+<script src="../dock.js?v=10"></script>
 </body>
 </html>

@@ -71,6 +71,8 @@
   const volumeSlider = hero.querySelector('.volume');
   const soundFolder = new URL('sound/', script.src);
   const sounds = new Map();
+  const files = new Map();
+  const EFFECTS = ['plop', 'bell', 'bubbles', 'gull', 'chime'];
   let audio = null;
   let soundOn = false;
   let playing = null;
@@ -95,15 +97,26 @@
     playing.gain.gain.setTargetAtTime(volume(), audio.currentTime, 0.04);
   });
 
-  const loadSound = (phase) => {
-    if (!sounds.has(phase)) {
-      const sound = fetch(new URL(`${phase}.mp3`, soundFolder))
-        .then((response) => (response.ok ? response.arrayBuffer() : Promise.reject(new Error(response.status))))
-        .then((data) => audio.decodeAudioData(data));
-      sound.catch(() => sounds.delete(phase));
-      sounds.set(phase, sound);
+  // A file can be fetched before there is an audio context; it is decoded once there is one to play it.
+  const fetchSound = (name) => {
+    if (!files.has(name)) {
+      const file = fetch(new URL(`${name}.mp3`, soundFolder))
+        .then((response) => (response.ok ? response.arrayBuffer() : Promise.reject(new Error(response.status))));
+      file.catch(() => files.delete(name));
+      files.set(name, file);
     }
-    return sounds.get(phase);
+    return files.get(name);
+  };
+  const loadSound = (name) => {
+    if (!sounds.has(name)) {
+      const sound = fetchSound(name).then((file) => audio.decodeAudioData(file));
+      sound.catch(() => {
+        sounds.delete(name);
+        files.delete(name);
+      });
+      sounds.set(name, sound);
+    }
+    return sounds.get(name);
   };
   const fadeOut = (seconds) => {
     if (!playing) return;
@@ -115,9 +128,10 @@
     source.stop(audio.currentTime + seconds + 0.05);
   };
   // Starts the loop for the current time of day; when the sky changes, the old loop fades into the new one.
+  const skyPhase = () => (phases.includes(root.dataset.sky) ? root.dataset.sky : 'night');
   async function playSound() {
-    const phase = phases.includes(root.dataset.sky) ? root.dataset.sky : 'night';
-    if (!soundOn || playing?.phase === phase) return;
+    const phase = skyPhase();
+    if (!audio || !soundOn || playing?.phase === phase) return;
     let buffer;
     try {
       buffer = await loadSound(phase);
@@ -160,7 +174,20 @@
     soundButton.setAttribute('aria-label', label);
     soundButton.title = label;
   };
-  const setSound = (on) => {
+  // A browser lets sound start only after the visitor's first tap, click or key press on the page, and
+  // warns in the console about an audio context made any earlier. Firefox says when a site may play at once.
+  const canStart = () => navigator.userActivation?.hasBeenActive
+    || navigator.getAutoplayPolicy?.('audiocontext') === 'allowed';
+  const startAudio = () => {
+    audio ??= new AudioContext();
+    audio.resume();
+    playSound();
+    // The short sounds that answer a click are decoded now, so the first of them is not late.
+    (window.requestIdleCallback ?? setTimeout)(() => {
+      for (const name of EFFECTS) loadSound(name).catch(() => {});
+    });
+  };
+  const setSound = (on, byGesture = false) => {
     soundOn = on;
     root.classList.toggle('has-sound', on);
     labelSoundButton();
@@ -172,33 +199,31 @@
     if (on) {
       // Turning the sound on while everything is paused sets the scene going again as well.
       if (root.classList.contains('is-paused')) setPaused(false);
-      audio ??= new AudioContext();
-      audio.resume();
-      playSound();
-      // The short sounds that answer a click are fetched now, so the first click is not late.
-      (window.requestIdleCallback ?? setTimeout)(() => {
-        for (const name of ['plop', 'bell', 'bubbles', 'gull', 'chime']) loadSound(name).catch(() => {});
-      });
+      if (audio || byGesture || canStart()) startAudio();
+      // Not allowed to play yet: the files are fetched meanwhile, so the first gesture starts the sea at once.
+      else for (const name of [skyPhase(), ...EFFECTS]) fetchSound(name).catch(() => {});
     } else {
       fadeOut(0.6);
     }
   };
   if (soundButton) {
-    // A browser lets sound start only after the visitor's first tap, click or key press on the page
-    // (some start at once on a site the visitor often plays sound on). So the sound is switched on when
-    // the page opens, and every such gesture wakes the audio until it is really running.
+    // The sound is switched on when the page opens, and every gesture wakes the audio until it is really
+    // running. audibleBefore tells the sound button's click whether the sea was heard before the gesture began.
     let audibleBefore = false;
-    const wake = () => {
-      audibleBefore = audio?.state === 'running';
-      if (soundOn && audio && !audibleBefore && !root.classList.contains('is-paused')) audio.resume();
+    const wake = (event) => {
+      if (event.type === 'pointerdown' || event.type === 'keydown') audibleBefore = audio?.state === 'running';
+      if (!soundOn || audio?.state === 'running' || root.classList.contains('is-paused')) return;
+      if (audio) audio.resume();
+      // A finger going down is not yet a gesture the browser counts; its lifting is.
+      else if (navigator.userActivation?.isActive ?? true) startAudio();
     };
     for (const gesture of ['pointerdown', 'pointerup', 'touchend', 'keydown']) {
       addEventListener(gesture, wake, { capture: true, passive: true });
     }
     soundButton.addEventListener('click', () => {
-      // On, but the browser has not let it be heard yet: this click starts it instead of switching it off.
-      if (soundOn && !audibleBefore && !root.classList.contains('is-paused')) audio.resume();
-      else setSound(!soundOn);
+      // On, but not heard before this click: the click starts the sea instead of switching it off.
+      if (soundOn && !audibleBefore && !root.classList.contains('is-paused')) startAudio();
+      else setSound(!soundOn, true);
     });
     document.addEventListener('visibilitychange', () => {
       if (!audio) return;
