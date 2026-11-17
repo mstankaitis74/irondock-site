@@ -436,27 +436,35 @@
     ], { duration: 2600, easing: 'cubic-bezier(0.3, 0.4, 0.4, 1)' });
     gull?.animate([{ scale: '1 1' }, { scale: '1 -0.55' }, { scale: '1 1' }], { duration: 380, iterations: 7 });
   };
-  // Bubbles rise from a click under the water. While the surface (the nearest wave of the scene) is in view and
-  // within reach, they go all the way up and burst there, each where it comes up; otherwise they fade on the way.
+  // Bubbles rise from a click under the water. The nearest wave of the scene is the front edge of the water's
+  // surface, and the surface itself lies behind it, up to the horizon. While that edge is in view and within
+  // reach, the bubbles go all the way up and break through somewhere on the surface, each in its own place;
+  // otherwise they fade on the way.
   // The scene and the water under it are two boxes that each clip their own content, so a bubble whose path
   // crosses from one into the other is drawn in both, and each box shows its own part of it.
   const bubbles = (clientX, clientY) => {
     const scene = heroFx.getBoundingClientRect();
     const em = scene.height / 100;
-    const surface = layerShift('surf').getBoundingClientRect().top + 2.2 * em;
-    const surfacing = surface > 0 && clientY - surface < 1000;
+    const edge = layerShift('surf').getBoundingClientRect().top + 2.2 * em;
+    const horizon = layerShift('swell').getBoundingClientRect().top + 2 * em;
+    const surfacing = edge > 0 && clientY - edge < 1000;
     for (let bubble = 0; bubble < 7; bubble++) {
       const x = clientX + random(-14, 14);
       const y = clientY + random(-8, 8);
       const size = random(6, 18);
       const drift = random(-26, 26);
-      const rise = surfacing ? y - surface + random(-0.7, 0.7) * em : random(130, 260);
+      // How far behind the edge it comes up: the further back, the higher on the screen.
+      const back = surfacing ? random(0.15, 0.9) * Math.max(0, Math.min(8 * em, edge - horizon - em)) : 0;
+      const rise = surfacing ? y - edge + back : random(130, 260);
+      const inFront = surfacing ? (y - edge) / rise : 0;   // the part of the way that is in the water in front
+      const turn = Math.min(0.25, inFront / 2);
       const frames = surfacing ? [
         { translate: '0 0', opacity: 0, scale: 0.4 },
-        { translate: `${drift}px ${-rise * 0.25}px`, opacity: 0.9, scale: 1, offset: 0.25 },
-        { translate: `${-drift * 0.6}px ${-rise * 0.65}px`, opacity: 0.85, offset: 0.65 },
-        { translate: `${drift * 0.4}px ${-rise * 0.96}px`, opacity: 0.85, scale: 1, offset: 0.96 },
-        { translate: `${drift * 0.4}px ${-rise}px`, opacity: 0, scale: 1.8 },
+        { translate: `${drift}px ${-rise * turn}px`, opacity: 0.9, scale: 1, offset: turn },
+        { translate: `${-drift * 0.6}px ${-rise * Math.min(inFront * 0.98, 0.9)}px`, opacity: 0.85, scale: 1, offset: Math.min(inFront * 0.98, 0.9) },
+        // Behind the edge it is seen through the surface, fainter and smaller, until it breaks through.
+        { translate: `${drift * 0.4}px ${-rise * 0.97}px`, opacity: back ? 0.4 : 0.85, scale: back ? 0.7 : 1, offset: 0.97 },
+        { translate: `${drift * 0.4}px ${-rise}px`, opacity: 0, scale: 1.7 },
       ] : [
         { translate: '0 0', opacity: 0, scale: 0.4 },
         { translate: `${drift}px ${-rise * 0.35}px`, opacity: 0.9, scale: 1, offset: 0.3 },
@@ -471,11 +479,22 @@
         const place = box.getBoundingClientRect();
         piece = spawn(box, 'fx-bubble', x - place.left, y - place.top, `${size.toFixed(0)}px`, frames, timing) ?? piece;
       }
-      // Where it bursts, the surface answers with a small ring.
+      // Where it breaks through, the surface answers with a ring and a couple of drops: smaller the further back.
       if (surfacing) {
         piece?.getAnimations()[0]?.finished.then(() => {
-          spawn(heroFx, 'fx-ring', x + drift * 0.4 - scene.left, y - rise - scene.top, 0.14 + size / 70,
-            [{ scale: 0.12, opacity: 0.8 }, { scale: 1, opacity: 0 }], { duration: 900, easing: 'ease-out' });
+          const left = x + drift * 0.4 - scene.left;
+          const top = y - rise - scene.top;
+          const near = 1 - 0.04 * back / em;
+          spawn(heroFx, 'fx-ring', left, top, (0.26 + size / 50) * near,
+            [{ scale: 0.12, opacity: 0.9 }, { scale: 1, opacity: 0 }], { duration: 1000, easing: 'ease-out' });
+          for (let drop = 0; drop < 2; drop++) {
+            const reach = random(-1.4, 1.4) * em * near;
+            spawn(heroFx, 'fx-drop', left, top, 1, [
+              { translate: '0 0', opacity: 1, easing: 'cubic-bezier(0.2, 0.7, 0.5, 1)' },
+              { translate: `${reach * 0.6}px ${-random(1.2, 2.6) * em * near}px`, opacity: 1, offset: 0.45, easing: 'cubic-bezier(0.5, 0, 0.9, 0.5)' },
+              { translate: `${reach}px ${0.3 * em}px`, opacity: 0 },
+            ], { duration: random(450, 700) });
+          }
         }, () => {});
       }
     }
