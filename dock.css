@@ -66,7 +66,7 @@
   --art-pier: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 450' preserveAspectRatio='none'%3E%3Cpath d='M0 14L50 54 100 14 150 54 200 14 250 54 300 14 350 54 400 14 450 54 500 14 550 54 600 14' fill='none' stroke='%23000' stroke-width='5' stroke-linejoin='round'/%3E%3Cpath d='M93 60h14v390H93zM287 60h26v390h-26zM493 60h14v390h-14zM282 60h36v9h-36zM89 60h22v7H89zM489 60h22v7h-22z'/%3E%3C/svg%3E"); --art-wave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 30' preserveAspectRatio='none'%3E%3Cpath d='M0 14Q50 0 100 14T200 14V30H0Z'/%3E%3C/svg%3E"); --art-crest: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 30' preserveAspectRatio='none'%3E%3Cpath d='M-100 14Q-50 28 0 14T100 14T200 14T300 14' fill='none' stroke='%23000' stroke-width='2.6'/%3E%3C/svg%3E"); --art-ripples: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 120' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M30 18h70M230 18h70M430 18h70M630 18h70M110 40h110M510 40h110M60 66h40M260 66h40M460 66h40M660 66h40M150 96h150M550 96h150'/%3E%3C/svg%3E");
   --art-buoy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1400 120'%3E%3Cg transform='translate(700 0)'%3E%3Cpath d='M22 66L35 30 48 66M27 52h16' fill='none' stroke='%230c1838' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='35' cy='24' r='6.5' fill='%23ffcb6b'/%3E%3Cpath d='M12 120L19 64h32l7 56z' fill='%23ff8a7a'/%3E%3Cpath d='M16.2 86h37.6l1.5 12H14.7z' fill='%23fff' opacity='.92'/%3E%3C/g%3E%3C/svg%3E"); --art-gull: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 12' preserveAspectRatio='none'%3E%3Cpath d='M2 9.5Q7 1.5 14 7.5Q21 1.5 26 9.5' fill='none' stroke='%23000' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --art-glitter-far: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 220' preserveAspectRatio='none'%3E%3Cpath d='M128 6h12M148 28h10M118 47h19M93 70h24M108 70h22M87 70h20M166 91h16M99 110h35M172 110h29M69 110h24M99 129h39M118 129h34M93 129h24M133 153h47M117 170h50M178 170h30M141 193h35M24 193h34M184 215h49' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E"); --art-glitter-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 220' preserveAspectRatio='none'%3E%3Cpath d='M122 7h12M124 18h14M106 30h16M80 40h21M129 55h23M70 63h19M129 77h22M138 86h25M184 86h21M81 101h24M61 109h21M41 121h39M95 132h39M45 143h29M151 143h41M111 154h24M58 154h38M94 167h32M187 167h27M53 181h28M122 181h44M173 188h29M25 188h32M140 200h32M180 200h40M210 212h28M42 212h37M40 212h58' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E"); --art-glitter-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 220' preserveAspectRatio='none'%3E%3Cpath d='M110 7h11M160 18h12M110 28h14M114 43h16M115 54h16M96 64h20M165 64h25M126 76h27M133 76h22M157 88h30M72 98h28M88 98h25M142 110h32M175 110h34M100 120h29M106 120h29M143 132h41M114 145h38M169 145h19M162 154h23M62 154h21M133 154h44M181 167h36M188 167h29M74 180h41M126 191h39M85 200h40M135 200h52M81 200h29M187 213h55' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E");
-  --art-fish: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 220'%3E%3Cdefs%3E%3Cg id='f'%3E%3Cpath d='M0-9L15 0 0 9zM10 0Q34-15 58 0 34 15 10 0z'/%3E%3C/g%3E%3C/defs%3E%3Cuse href='%23f' transform='translate(30 44) scale(1)'/%3E%3Cuse href='%23f' transform='translate(126 22) scale(0.8)'/%3E%3Cuse href='%23f' transform='translate(150 96) scale(1.1)'/%3E%3Cuse href='%23f' transform='translate(262 54) scale(0.9)'/%3E%3Cuse href='%23f' transform='translate(304 146) scale(1)'/%3E%3Cuse href='%23f' transform='translate(404 96) scale(0.8)'/%3E%3Cuse href='%23f' transform='translate(436 176) scale(0.7)'/%3E%3Cuse href='%23f' transform='translate(222 188) scale(0.85)'/%3E%3C/svg%3E"); --art-whale: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 400'%3E%3Cpath d='M48 215C60 170 110 135 200 120C300 104 420 108 540 132C650 154 760 186 850 200C890 180 930 150 962 118C952 160 935 190 920 206C940 222 958 255 966 292C925 262 885 236 850 222C770 244 660 282 520 300C400 314 260 318 160 292C100 276 60 250 48 215Z'/%3E%3Cpath d='M300 296C330 340 380 372 432 382C410 350 392 320 384 298Z'/%3E%3Cpath d='M636 152C660 128 684 120 696 122C694 140 696 156 702 168Z'/%3E%3C/svg%3E"); --art-seabed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2400 240'%3E%3Cpath d='M0 240V150Q200 112 420 140T900 150T1400 122T1900 150T2400 150V240Z'/%3E%3Cellipse cx='640' cy='150' rx='70' ry='30'/%3E%3Cellipse cx='716' cy='156' rx='40' ry='20'/%3E%3Cellipse cx='2060' cy='150' rx='90' ry='34'/%3E%3Cg fill='none' stroke='%23000' stroke-width='9' stroke-linecap='round'%3E%3Cpath d='M250 140q-22-28 0-56t0-56M286 136q20-24 0-48t0-40M214 142q18-20 2-40'/%3E%3Cpath d='M1120 124q-22-28 0-56t0-56M1156 122q20-24 0-48M1088 128q-16-22 0-44t0-36'/%3E%3Cpath d='M2290 150q-22-28 0-56t0-50M2326 150q20-24 0-48'/%3E%3Cg transform='rotate(-18 1700 120)'%3E%3Cpath d='M1700 44v118M1672 70h56M1640 118q6 52 60 52t60-52M1632 132l8-22 18 16zM1768 132l-8-22-18 16z'/%3E%3Ccircle cx='1700' cy='30' r='13'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  --art-fish: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 220'%3E%3Cdefs%3E%3Cg id='f'%3E%3Cpath d='M0-9L15 0 0 9zM10 0Q34-15 58 0 34 15 10 0z'/%3E%3C/g%3E%3C/defs%3E%3Cuse href='%23f' transform='translate(30 44) scale(1)'/%3E%3Cuse href='%23f' transform='translate(126 22) scale(0.8)'/%3E%3Cuse href='%23f' transform='translate(150 96) scale(1.1)'/%3E%3Cuse href='%23f' transform='translate(262 54) scale(0.9)'/%3E%3Cuse href='%23f' transform='translate(304 146) scale(1)'/%3E%3Cuse href='%23f' transform='translate(404 96) scale(0.8)'/%3E%3Cuse href='%23f' transform='translate(436 176) scale(0.7)'/%3E%3Cuse href='%23f' transform='translate(222 188) scale(0.85)'/%3E%3C/svg%3E"); --art-whale: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 400'%3E%3Cpath d='M48 215C60 170 110 135 200 120C300 104 420 108 540 132C650 154 760 186 850 200C890 180 930 150 962 118C952 160 935 190 920 206C940 222 958 255 966 292C925 262 885 236 850 222C770 244 660 282 520 300C400 314 260 318 160 292C100 276 60 250 48 215Z'/%3E%3Cpath d='M300 296C330 340 380 372 432 382C410 350 392 320 384 298Z'/%3E%3Cpath d='M636 152C660 128 684 120 696 122C694 140 696 156 702 168Z'/%3E%3C/svg%3E"); --art-seabed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2400 240'%3E%3Cpath d='M0 240V150Q200 112 420 140T900 150T1400 122T1900 150T2400 150V240Z'/%3E%3Cellipse cx='640' cy='150' rx='70' ry='30'/%3E%3Cellipse cx='716' cy='156' rx='40' ry='20'/%3E%3Cellipse cx='2060' cy='150' rx='90' ry='34'/%3E%3Cg fill='none' stroke='%23000' stroke-width='9' stroke-linecap='round'%3E%3Cg transform='rotate(-18 1700 120)'%3E%3Cpath d='M1700 44v118M1672 70h56M1640 118q6 52 60 52t60-52M1632 132l8-22 18 16zM1768 132l-8-22-18 16z'/%3E%3Ccircle cx='1700' cy='30' r='13'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); --art-weed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2400 240'%3E%3Cg fill='none' stroke='%23000' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M250 192V140q-22-28 0-56t0-56M286 192V136q20-24 0-48t0-40M214 192V142q18-20 2-40'/%3E%3Cpath d='M1120 192V124q-22-28 0-56t0-56M1156 192V122q20-24 0-48M1088 192V128q-16-22 0-44t0-36'/%3E%3Cpath d='M2290 192V150q-22-28 0-56t0-50M2326 192V150q20-24 0-48'/%3E%3C/g%3E%3C/svg%3E");
   --art-sound-on: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 9v6h4l5 4V5L8 9z'/%3E%3Cpath d='M16 8.6a5 5 0 0 1 0 6.8M18.6 6a8.6 8.6 0 0 1 0 12' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E"); --art-sound-off: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 9v6h4l5 4V5L8 9z'/%3E%3Cpath d='M16.5 9.5l5 5M21.5 9.5l-5 5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
@@ -347,7 +347,7 @@ html:lang(en) .lang:hover .flag--en, html:lang(lt) .lang:hover .flag--lt { backg
                   opacity: var(--rays); pointer-events: none;
                   background: repeating-linear-gradient(104deg, transparent 0, #fff 5vw, transparent 10vw 16vw,
                                                         #fff 18.5vw, transparent 21vw 33vw);
-                  -webkit-mask: linear-gradient(#000, transparent); mask: linear-gradient(#000, transparent); }
+                  -webkit-mask: linear-gradient(transparent, #000 26%, transparent); mask: linear-gradient(transparent, #000 26%, transparent); }
 /* A whale passes far below. */
 .depths::after { content: ""; position: absolute; z-index: -1; top: 58%; left: 22%; width: min(96vw, 940px); aspect-ratio: 1000 / 400;
                  pointer-events: none; background: var(--deep-3); opacity: 0.55; -webkit-mask: var(--art-whale) 0 0 / 100% 100% no-repeat; mask: var(--art-whale) 0 0 / 100% 100% no-repeat; }
@@ -417,16 +417,21 @@ body:not([data-berth="0"]) .berth[aria-current="page"] strong { text-decoration:
 .content::before { top: 7%; left: -8vw; width: clamp(170px, 24vw, 340px); }
 .content::after { top: 62%; right: -6vw; width: clamp(130px, 17vw, 250px); scale: -1 1; opacity: 0.7; }
 
-/* The sea bed: two rows of dunes and weed, and the contact line resting above them. */
+/* The sea bed: two rows of dunes, the weed that grows out of each, and the contact line resting above them.
+   The weed is a picture of its own (.weed, two rows after the footer), laid over the dunes of its row in the
+   same colour and rooted below the sand, so it can lean with the water without leaving the ground. */
 footer { position: relative; margin-top: auto; padding: 72px max(20px, calc(50% - 360px)) clamp(150px, 19vw, 250px);
          color: var(--muted); font-size: 14px;
          background: linear-gradient(transparent 25%, rgba(130,160,255,.12));   /* a haze over the bed, so the dunes stand out */ }
-footer::before, footer::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; pointer-events: none; }
-footer::before, footer::after { background: var(--deep-3); }
-footer::before { height: clamp(96px, 13vw, 170px); background: color-mix(in srgb, var(--deep-3) 55%, var(--deep-2));
-                 -webkit-mask: var(--art-seabed) 30% 100% / auto 100% repeat-x; mask: var(--art-seabed) 30% 100% / auto 100% repeat-x; }
-footer::after { height: clamp(120px, 16vw, 210px); background: color-mix(in srgb, var(--deep-3) 50%, #000);
-                -webkit-mask: var(--art-seabed) 85% 100% / auto 100% repeat-x; mask: var(--art-seabed) 85% 100% / auto 100% repeat-x; }
+footer::before, footer::after { content: ""; }
+footer::before, footer::after, .weed { position: absolute; left: 0; right: 0; bottom: 0; pointer-events: none; }
+footer::before, .weed--far { height: clamp(96px, 13vw, 170px); background: color-mix(in srgb, var(--deep-3) 55%, var(--deep-2)); }
+footer::after, .weed--near { height: clamp(120px, 16vw, 210px); background: color-mix(in srgb, var(--deep-3) 50%, #000); }
+footer::before { -webkit-mask: var(--art-seabed) 30% 100% / auto 100% repeat-x; mask: var(--art-seabed) 30% 100% / auto 100% repeat-x; }
+footer::after { z-index: 1; -webkit-mask: var(--art-seabed) 85% 100% / auto 100% repeat-x; mask: var(--art-seabed) 85% 100% / auto 100% repeat-x; }   /* in front of the far row's weed */
+.weed { transform-origin: 50% 66%; }   /* about where the weed leaves the sand */
+.weed--far { -webkit-mask: var(--art-weed) 30% 100% / auto 100% repeat-x; mask: var(--art-weed) 30% 100% / auto 100% repeat-x; }
+.weed--near { -webkit-mask: var(--art-weed) 85% 100% / auto 100% repeat-x; mask: var(--art-weed) 85% 100% / auto 100% repeat-x; }
 
 /* dock.js fades these out, swaps their content for the next page's and fades them back in. */
 [data-swap] { transition: opacity 0.25s; }
@@ -447,13 +452,15 @@ footer::after { height: clamp(120px, 16vw, 210px); background: color-mix(in srgb
   .glitter { animation: shimmer 2.2s ease-in-out infinite alternate; }
   .glitter--alt { animation-direction: alternate-reverse; }
   .lang { animation: sway 7s ease-in-out infinite alternate; }
+  .weed { animation: lean 9s ease-in-out infinite alternate; }
+  .weed--near { animation-duration: 7s; animation-delay: -3s; }
   .gull { left: -8em; animation: fly var(--t) linear var(--d) infinite, soar 9s ease-in-out var(--d) infinite alternate,
                                  flap var(--w) ease-in-out var(--d) infinite; }
   .gull--back { animation-direction: reverse, alternate, normal; }
   /* The scene rests while it is scrolled out of view or paused with the button. */
   .hero.is-offscreen :is(.drift, .flow, .gull, .glitter, .lang, .buoy), .hero.is-offscreen :is(.lamp, .layer--stars > .shift)::after,
   .hero.is-offscreen .layer--surf > .shift::before,
-  .is-paused :is(.drift, .flow, .gull, .glitter, .lang, .buoy), .is-paused :is(.lamp, .layer--stars > .shift)::after,
+  .is-paused :is(.drift, .flow, .gull, .glitter, .lang, .buoy, .weed), .is-paused :is(.lamp, .layer--stars > .shift)::after,
   .is-paused .layer--surf > .shift::before { animation-play-state: paused; }
 
   /* Touch devices have no pointer shift, so the layers need no spare width. */
@@ -473,6 +480,8 @@ footer::after { height: clamp(120px, 16vw, 210px); background: color-mix(in srgb
     .content::before { animation: swim linear both; animation-timeline: view(); }
     .content::after { animation: swim-back linear both; animation-timeline: view(); }
     footer::before { animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+    .weed--far { animation: rise linear both, lean 9s ease-in-out infinite alternate; animation-timeline: view(), auto;
+                 animation-range: entry 0% entry 100%, normal; }
   }
 }
 @keyframes slide { to { translate: calc(var(--period) * -1) 0; } }
@@ -487,6 +496,7 @@ footer::after { height: clamp(120px, 16vw, 210px); background: color-mix(in srgb
 @keyframes bob { from { translate: 0 0.25em; } to { translate: 0 -0.35em; } }
 @keyframes shimmer { from { opacity: 0.2; } }
 @keyframes sway { from { rotate: -1.6deg; } to { rotate: 1.6deg; } }
+@keyframes lean { from { transform: skewX(-5deg); } to { transform: skewX(5deg); } }
 @keyframes fly { to { translate: calc(100vw + 44em) 0; } }
 @keyframes soar { from { transform: translateY(-1.6em); } to { transform: translateY(1.6em); } }
 @keyframes flap { 0%, 52%, 100% { scale: 1 1; } 62%, 84% { scale: 1 -0.55; } 73% { scale: 1 0.9; } }

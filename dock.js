@@ -409,8 +409,11 @@
       ], { duration: random(650, 950) });
     }
   };
-  const fallingStar = (x, y) => {
+  const fallingStar = (clickX, clickY) => {
     const em = hero.offsetHeight / 100;
+    // Each star starts a little away from the click, so quick clicks on one spot scatter over that part of the sky.
+    const x = clickX + random(-9, 9) * em;
+    const y = Math.max(clickY + random(-6, 6) * em, 2 * em);
     const left = Math.random() < 0.5;
     const streak = spawn(heroFx, 'fx-streak', x, y, 1, [
       { translate: '0 0', opacity: 0 },
@@ -433,16 +436,48 @@
     ], { duration: 2600, easing: 'cubic-bezier(0.3, 0.4, 0.4, 1)' });
     gull?.animate([{ scale: '1 1' }, { scale: '1 -0.55' }, { scale: '1 1' }], { duration: 380, iterations: 7 });
   };
-  const bubbles = (x, y) => {
+  // Bubbles rise from a click under the water. While the surface (the nearest wave of the scene) is in view and
+  // within reach, they go all the way up and burst there, each where it comes up; otherwise they fade on the way.
+  // The scene and the water under it are two boxes that each clip their own content, so a bubble whose path
+  // crosses from one into the other is drawn in both, and each box shows its own part of it.
+  const bubbles = (clientX, clientY) => {
+    const scene = heroFx.getBoundingClientRect();
+    const em = scene.height / 100;
+    const surface = layerShift('surf').getBoundingClientRect().top + 2.2 * em;
+    const surfacing = surface > 0 && clientY - surface < 1000;
     for (let bubble = 0; bubble < 7; bubble++) {
+      const x = clientX + random(-14, 14);
+      const y = clientY + random(-8, 8);
+      const size = random(6, 18);
       const drift = random(-26, 26);
-      const rise = random(130, 260);
-      spawn(depthsFx, 'fx-bubble', x + random(-14, 14), y + random(-8, 8), `${random(6, 18).toFixed(0)}px`, [
+      const rise = surfacing ? y - surface + random(-0.7, 0.7) * em : random(130, 260);
+      const frames = surfacing ? [
+        { translate: '0 0', opacity: 0, scale: 0.4 },
+        { translate: `${drift}px ${-rise * 0.25}px`, opacity: 0.9, scale: 1, offset: 0.25 },
+        { translate: `${-drift * 0.6}px ${-rise * 0.65}px`, opacity: 0.85, offset: 0.65 },
+        { translate: `${drift * 0.4}px ${-rise * 0.96}px`, opacity: 0.85, scale: 1, offset: 0.96 },
+        { translate: `${drift * 0.4}px ${-rise}px`, opacity: 0, scale: 1.8 },
+      ] : [
         { translate: '0 0', opacity: 0, scale: 0.4 },
         { translate: `${drift}px ${-rise * 0.35}px`, opacity: 0.9, scale: 1, offset: 0.3 },
         { translate: `${-drift * 0.6}px ${-rise * 0.7}px`, opacity: 0.7, offset: 0.7 },
         { translate: `${drift * 0.4}px ${-rise}px`, opacity: 0 },
-      ], { duration: random(1500, 2500), delay: random(0, 280), easing: 'ease-out' });
+      ];
+      const timing = surfacing
+        ? { duration: Math.max(800, rise / random(0.12, 0.19)), delay: random(0, 280) }
+        : { duration: random(1500, 2500), delay: random(0, 280), easing: 'ease-out' };
+      let piece = null;
+      for (const box of y - rise - size < scene.bottom ? [depthsFx, heroFx] : [depthsFx]) {
+        const place = box.getBoundingClientRect();
+        piece = spawn(box, 'fx-bubble', x - place.left, y - place.top, `${size.toFixed(0)}px`, frames, timing) ?? piece;
+      }
+      // Where it bursts, the surface answers with a small ring.
+      if (surfacing) {
+        piece?.getAnimations()[0]?.finished.then(() => {
+          spawn(heroFx, 'fx-ring', x + drift * 0.4 - scene.left, y - rise - scene.top, 0.14 + size / 70,
+            [{ scale: 0.12, opacity: 0.8 }, { scale: 1, opacity: 0 }], { duration: 900, easing: 'ease-out' });
+        }, () => {});
+      }
     }
   };
 
@@ -470,8 +505,7 @@
     const { clientX, clientY } = event;
 
     if (target.closest('.depths')) {
-      const box = depthsFx.getBoundingClientRect();
-      if (!reducedMotion) bubbles(clientX - box.left, clientY - box.top);
+      if (!reducedMotion) bubbles(clientX, clientY);
       playEffect('bubbles', clientX);
       return;
     }
