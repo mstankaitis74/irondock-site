@@ -28,7 +28,7 @@ t=d.getHours()+d.getMinutes()/60-12.4-z,s=Math.abs(t);return s<h-.7?"day":s<h+.7
 var o;try{o=sessionStorage.getItem("sky")}catch(e){}
 window.skyNow=now;document.documentElement.dataset.sky=/^(dawn|day|dusk|night)$/.test(o)?o:now()})()
 </script>
-<link rel="stylesheet" href="dock.css?v=2">
+<link rel="stylesheet" href="dock.css?v=3">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -85,6 +85,7 @@ window.skyNow=now;document.documentElement.dataset.sky=/^(dawn|day|dusk|night)$/
     <span class="flag flag--en" aria-hidden="true">EN</span>
     <span class="flag flag--lt" aria-hidden="true">LT</span>
   </a>
+  <button class="sound" type="button" data-sync="sound" data-on="Turn on the sea sounds" data-off="Turn off the sea sounds" aria-label="Turn on the sea sounds" title="Turn on the sea sounds"></button>
   <button class="pause" type="button" data-sync="pause" data-pause="Pause the animation" data-play="Play the animation" aria-label="Pause the animation" title="Pause the animation"></button>
 </header>
 
@@ -115,6 +116,6 @@ window.skyNow=now;document.documentElement.dataset.sky=/^(dawn|day|dusk|night)$/
 
 <footer data-swap-lang="footer">Contact: <a href="mailto:info@irondock.dev">info@irondock.dev</a></footer>
 </div>
-<script src="dock.js?v=2"></script>
+<script src="dock.js?v=3"></script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 // Harbour scene: time of day, parallax on scroll and pointer, and travel between berths without a page reload.
 (() => {
+  const script = document.currentScript;
   const hero = document.querySelector('.hero');
   if (!hero) return;
   const root = document.documentElement;
@@ -24,6 +25,7 @@
     const apply = () => {
       root.dataset.sky = phase;
       paintThemeColor();
+      playSound();
     };
     if (document.startViewTransition && !reducedMotion) document.startViewTransition(apply);
     else apply();
@@ -56,6 +58,114 @@
     root.classList.toggle('is-paused');
     labelPauseButton();
   });
+
+  // ---- Sound: quiet sea sounds for the time of day, off until the visitor turns them on ----
+  // Each file in sound/ is one loop with half a second of its own neighbouring loop on either side.
+  // The player repeats only the part in between, so the join never falls on the padding an MP3 carries
+  // at its ends, and the last sample of the loop runs straight into the first.
+  const LOOP_START = 0.5;
+  const LOOP_LENGTH = 27.5;
+  const VOLUME = 1;
+  const soundButton = window.AudioContext ? hero.querySelector('.sound') : null;
+  const soundFolder = new URL('sound/', script.src);
+  const sounds = new Map();
+  let audio = null;
+  let soundOn = false;
+  let playing = null;
+
+  const loadSound = (phase) => {
+    if (!sounds.has(phase)) {
+      const sound = fetch(new URL(`${phase}.mp3`, soundFolder))
+        .then((response) => (response.ok ? response.arrayBuffer() : Promise.reject(new Error(response.status))))
+        .then((data) => audio.decodeAudioData(data));
+      sound.catch(() => sounds.delete(phase));
+      sounds.set(phase, sound);
+    }
+    return sounds.get(phase);
+  };
+  const fadeOut = (seconds) => {
+    if (!playing) return;
+    const { source, gain } = playing;
+    playing = null;
+    gain.gain.cancelScheduledValues(audio.currentTime);
+    gain.gain.setValueAtTime(gain.gain.value, audio.currentTime);
+    gain.gain.linearRampToValueAtTime(0, audio.currentTime + seconds);
+    source.stop(audio.currentTime + seconds + 0.05);
+  };
+  // Starts the loop for the current time of day; when the sky changes, the old loop fades into the new one.
+  async function playSound() {
+    const phase = phases.includes(root.dataset.sky) ? root.dataset.sky : 'night';
+    if (!soundOn || playing?.phase === phase) return;
+    let buffer;
+    try {
+      buffer = await loadSound(phase);
+    } catch {
+      return;   // no sound this time; the page works without it
+    }
+    if (!soundOn || playing?.phase === phase || root.dataset.sky !== phase) return;
+    fadeOut(2);
+    const source = audio.createBufferSource();
+    const gain = audio.createGain();
+    source.buffer = buffer;
+    source.loop = true;
+    source.loopStart = LOOP_START;
+    source.loopEnd = LOOP_START + LOOP_LENGTH;
+    gain.gain.setValueAtTime(0, audio.currentTime);
+    gain.gain.linearRampToValueAtTime(VOLUME, audio.currentTime + 2);
+    source.connect(gain).connect(audio.destination);
+    source.start(0, LOOP_START);
+    playing = { phase, source, gain };
+  }
+  const labelSoundButton = () => {
+    if (!soundButton) return;
+    const label = soundButton.dataset[soundOn ? 'off' : 'on'];
+    soundButton.setAttribute('aria-label', label);
+    soundButton.title = label;
+  };
+  const setSound = (on) => {
+    soundOn = on;
+    root.classList.toggle('has-sound', on);
+    labelSoundButton();
+    try {
+      sessionStorage.setItem('sound', on ? 'on' : 'off');
+    } catch {
+      // Not remembered for the next page load.
+    }
+    if (on) {
+      audio ??= new AudioContext();
+      audio.resume();
+      playSound();
+    } else {
+      fadeOut(0.6);
+    }
+  };
+  if (soundButton) {
+    soundButton.addEventListener('click', () => setSound(!soundOn));
+    document.addEventListener('visibilitychange', () => {
+      if (!audio) return;
+      if (document.hidden) audio.suspend();
+      else if (soundOn) audio.resume();
+    });
+    // A browser only lets sound start from a tap or a key press. If it was on before this page was
+    // (re)loaded, it comes back with the visitor's first one.
+    let wasOn = false;
+    try {
+      wasOn = sessionStorage.getItem('sound') === 'on';
+    } catch {
+      // Storage is blocked: the sound simply starts off.
+    }
+    if (wasOn) {
+      const resume = (event) => {
+        removeEventListener('pointerdown', resume, true);
+        removeEventListener('keydown', resume, true);
+        if (!soundOn && !event.target.closest?.('.sound')) setSound(true);
+      };
+      addEventListener('pointerdown', resume, true);
+      addEventListener('keydown', resume, true);
+    }
+  } else {
+    hero.querySelector('.sound')?.remove();
+  }
 
   // The scene rests and the parallax stops updating while it is scrolled out of view.
   let heroVisible = true;
@@ -210,12 +320,13 @@
     document.querySelectorAll('[data-sync]').forEach((control) => {
       const source = next.querySelector(`[data-sync="${control.dataset.sync}"]`);
       if (!source) return;
-      for (const name of ['aria-label', 'title', 'hreflang', 'data-pause', 'data-play']) {
+      for (const name of ['aria-label', 'title', 'hreflang', 'data-pause', 'data-play', 'data-on', 'data-off']) {
         if (source.hasAttribute(name)) control.setAttribute(name, source.getAttribute(name));
       }
       if (source.hasAttribute('href')) control.href = new URL(source.getAttribute('href'), url).href;
     });
     labelPauseButton();
+    labelSoundButton();
     document.querySelectorAll('.berth, .mark').forEach((link) => {
       if (link.dataset.berth === berth) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
