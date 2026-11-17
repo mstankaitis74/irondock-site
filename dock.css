@@ -284,17 +284,21 @@ html:lang(en) .lang:hover .flag--en, html:lang(lt) .lang:hover .flag--lt { backg
   html:lang(en) .flag--lt, html:lang(lt) .flag--en { translate: 0 30px; }
 }
 
-/* Two round buttons in the corner of the scene: .pause stops and starts everything that moves on its own
-   (waves, clouds, gulls, lamps); .sound turns the sea sounds on and off. Neither does anything without
-   dock.js, which sets .js on <html>. */
-.pause, .sound { display: none; position: absolute; z-index: 3; right: max(20px, calc(50% - 560px)); bottom: 18px;
+/* Controls in the corner of the scene: .pause stops and starts everything that moves on its own (waves,
+   clouds, gulls, lamps); .sound turns the sea sounds on and off, and .volume appears beside it while they
+   play. None of them does anything without dock.js, which sets .js on <html>. */
+.hero { --corner: max(20px, calc(50% - 560px)); }
+.pause, .sound { display: none; position: absolute; z-index: 3; right: var(--corner); bottom: 18px;
                  width: 36px; height: 36px; padding: 0; border: 1px solid rgba(255,255,255,.4); border-radius: 50%;
                  background: rgba(8,19,48,.35); color: #fff; cursor: pointer; opacity: 0.6; transition: opacity 0.2s; }
 .js .pause, .js .sound { display: block; }
 .pause:hover, .pause:focus-visible, .sound:hover, .sound:focus-visible, .has-sound .sound { opacity: 1; }
 .pause::before { content: ""; position: absolute; inset: 11px 12px; border: solid currentColor; border-width: 0 4px; }
 .is-paused .pause::before { inset: 10px 10px 10px 13px; border: 0; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%); }
-.sound { right: calc(max(20px, 50% - 560px) + 46px); }
+.sound { right: calc(var(--corner) + 46px); }
+.volume { display: none; position: absolute; z-index: 3; right: calc(var(--corner) + 92px); bottom: 18px; width: 104px; height: 36px;
+          margin: 0; accent-color: var(--accent); cursor: pointer; touch-action: none; }
+.has-sound .volume { display: block; }
 .sound::before { content: ""; position: absolute; inset: 7px; background: currentColor; -webkit-mask: var(--art-sound-off) 0 0 / 100% 100% no-repeat; mask: var(--art-sound-off) 0 0 / 100% 100% no-repeat; }
 .has-sound .sound::before { -webkit-mask: var(--art-sound-on) 0 0 / 100% 100% no-repeat; mask: var(--art-sound-on) 0 0 / 100% 100% no-repeat; }
 
@@ -460,5 +464,9 @@ footer::after { height: clamp(120px, 16vw, 210px); background: color-mix(in srgb
 @media (prefers-reduced-motion: reduce) {
   .layer, [data-swap], .flag, .plate, .berth, .berth-no, .orb { transition: none; }
 }
-@media (prefers-reduced-motion: reduce) { .js .pause { display: none; } .sound { right: max(20px, calc(50% - 560px)); } }
+@media (prefers-reduced-motion: reduce) {
+  .js .pause { display: none; }
+  .sound { right: var(--corner); }
+  .volume { right: calc(var(--corner) + 46px); }
+}
 @media print { *, *::before, *::after { animation: none !important; } }

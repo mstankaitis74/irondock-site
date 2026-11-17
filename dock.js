@@ -65,13 +65,33 @@
   // at its ends, and the last sample of the loop runs straight into the first.
   const LOOP_START = 0.5;
   const LOOP_LENGTH = 27.5;
-  const VOLUME = 1;
   const soundButton = window.AudioContext ? hero.querySelector('.sound') : null;
+  const volumeSlider = hero.querySelector('.volume');
   const soundFolder = new URL('sound/', script.src);
   const sounds = new Map();
   let audio = null;
   let soundOn = false;
   let playing = null;
+
+  // The slider goes from 0 to 100. Loudness is heard on a curve, so the gain follows the square of the
+  // slider: 70, where it starts, plays the files as they are, and 100 is twice that.
+  const volume = () => (volumeSlider ? (volumeSlider.value / 100) ** 2 * 2 : 1);
+  try {
+    const saved = Number(localStorage.getItem('volume'));
+    if (volumeSlider && saved >= 1 && saved <= 100) volumeSlider.value = saved;
+  } catch {
+    // Storage is blocked: the slider starts in the middle every time.
+  }
+  volumeSlider?.addEventListener('input', () => {
+    try {
+      localStorage.setItem('volume', volumeSlider.value);
+    } catch {
+      // Not remembered for the next visit.
+    }
+    if (!playing) return;
+    playing.gain.gain.cancelScheduledValues(audio.currentTime);
+    playing.gain.gain.setTargetAtTime(volume(), audio.currentTime, 0.04);
+  });
 
   const loadSound = (phase) => {
     if (!sounds.has(phase)) {
@@ -111,7 +131,7 @@
     source.loopStart = LOOP_START;
     source.loopEnd = LOOP_START + LOOP_LENGTH;
     gain.gain.setValueAtTime(0, audio.currentTime);
-    gain.gain.linearRampToValueAtTime(VOLUME, audio.currentTime + 2);
+    gain.gain.linearRampToValueAtTime(volume(), audio.currentTime + 2);
     source.connect(gain).connect(audio.destination);
     source.start(0, LOOP_START);
     playing = { phase, source, gain };
@@ -165,6 +185,7 @@
     }
   } else {
     hero.querySelector('.sound')?.remove();
+    volumeSlider?.remove();
   }
 
   // The scene rests and the parallax stops updating while it is scrolled out of view.
@@ -370,7 +391,8 @@
   };
 
   hero.addEventListener('pointerdown', (event) => {
-    if (event.pointerType === 'mouse' || !event.isPrimary) return;
+    // A finger on the volume slider is moving the slider, not the scene.
+    if (event.pointerType === 'mouse' || !event.isPrimary || event.target.closest('.volume')) return;
     drag = {
       id: event.pointerId, startX: event.clientX, startY: event.clientY, lastX: event.clientX, lastTime: event.timeStamp,
       from: Number(document.body.dataset.berth), step: mark(1).offsetLeft - mark(0).offsetLeft, moved: 0, speed: 0, active: false,
