@@ -42,7 +42,7 @@ const BUGS = {
   caterpillar: { points: 200, harm: 'heavy' },
 };
 const HARMS = { dizzy: 10, heavy: 15 };   // for how many seconds each lasts
-const FRY = 2;                            // points for swallowing a small fish
+const FRY = 10;                           // points for swallowing a small fish
 // The junk that falls in: its size in lengths of the player's fish, how fast it sinks and turns beside the
 // rest, and how much of its size hits.
 const JUNK = {
