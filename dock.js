@@ -76,6 +76,7 @@
   let audio = null;
   let soundOn = false;
   let playing = null;
+  let gameLoop = null;   // the loop the game under the water plays in place of the sea, while it is open
 
   // The slider goes from 0 to 100 and starts at 10. Loudness is heard on a curve, so the gain rises faster
   // than the slider: 10 is a quiet background, about 65 plays the files as they are, 100 is twice that.
@@ -128,17 +129,19 @@
     source.stop(audio.currentTime + seconds + 0.05);
   };
   // Starts the loop for the current time of day; when the sky changes, the old loop fades into the new one.
+  // While the game under the water is open, its loop plays instead (swapSea).
   const skyPhase = () => (phases.includes(root.dataset.sky) ? root.dataset.sky : 'night');
+  const loopName = () => gameLoop ?? skyPhase();
   async function playSound() {
-    const phase = skyPhase();
-    if (!audio || !soundOn || playing?.phase === phase) return;
+    const name = loopName();
+    if (!audio || !soundOn || playing?.name === name) return;
     let buffer;
     try {
-      buffer = await loadSound(phase);
+      buffer = await loadSound(name);
     } catch {
       return;   // no sound this time; the page works without it
     }
-    if (!soundOn || playing?.phase === phase || root.dataset.sky !== phase) return;
+    if (!soundOn || playing?.name === name || loopName() !== name) return;
     fadeOut(2);
     const source = audio.createBufferSource();
     const gain = audio.createGain();
@@ -150,7 +153,7 @@
     gain.gain.linearRampToValueAtTime(volume(), audio.currentTime + 2);
     source.connect(gain).connect(audio.destination);
     source.start(0, LOOP_START);
-    playing = { phase, source, gain };
+    playing = { name, source, gain };
   }
   // The pause button silences the sea together with the scene: a short fade, then the audio clock stops,
   // so the loop carries on from the same wave when the scene runs again.
@@ -258,7 +261,8 @@
   }
 
   // One of the short sounds, a little different in pitch every time and placed left or right with the click.
-  const playEffect = async (name, clientX) => {
+  // The game under the water plays its own the same way, each lower or higher and softer or louder as it asks.
+  const playEffect = async (name, clientX, { pitch = 1, level = 1 } = {}) => {
     if (!soundOn || audio?.state !== 'running') return;
     let buffer;
     try {
@@ -269,8 +273,8 @@
     const source = audio.createBufferSource();
     const gain = audio.createGain();
     source.buffer = buffer;
-    source.playbackRate.value = 0.93 + Math.random() * 0.14;
-    gain.gain.value = volume();
+    source.playbackRate.value = pitch * (0.93 + Math.random() * 0.14);
+    gain.gain.value = volume() * level;
     let output = source.connect(gain);
     if (audio.createStereoPanner) {
       const panner = audio.createStereoPanner();
@@ -279,6 +283,17 @@
     }
     output.connect(audio.destination);
     source.start();
+  };
+  // The game under the water has sounds of its own (sound/dive/), and the sea is not heard down there: while
+  // the game is open its loop plays in place of the sea's, and the sea comes back when the game closes.
+  const swapSea = (name = null) => {
+    gameLoop = name;
+    fadeOut(0.6);
+    playSound();
+  };
+  // The game's short sounds are fetched and decoded as it opens, so that the first of each is not late.
+  const loadSounds = (names) => {
+    if (soundOn && audio) for (const name of names) loadSound(name).catch(() => {});
   };
 
   // The scene rests and the parallax stops updating while it is scrolled out of view.
@@ -541,7 +556,7 @@
   let game = null;
   const dive = () => {
     game ??= import(new URL(`dive.js${new URL(script.src).search}`, script.src));
-    game.then((module) => module.dive({ playEffect, reducedMotion }), () => { game = null; });
+    game.then((module) => module.dive({ playEffect, swapSea, loadSounds, reducedMotion }), () => { game = null; });
   };
   let bells = [];   // when the latest clicks on a buoy came
   let taps = [];    // when and where the latest clicks under the water came

@@ -9,6 +9,8 @@
 // It is steered with the mouse (the fish goes where the pointer is), the arrow keys, or a finger: a stick comes
 // up wherever the finger is put down, so the hand need not be where the fish is. Which of them it is shows in
 // each event; nothing has to guess what kind of device this is.
+// The game has sounds of its own (sound/dive/). The sea above is not heard down here: a loop of the deep plays
+// in its place, and what happens in the water is heard through it. dock.js plays them, at the page's volume.
 // dock.js fetches this file only when the game is found (five clicks within four seconds on a buoy or on one
 // spot under the water, or the word "fish" typed anywhere) and calls dive(). The styles are in dock.css (.dive).
 
@@ -51,13 +53,16 @@ const JUNK = {
   can: { size: [0.9, 1.2], sink: 0.6, turn: 1.4, hit: 0.36 },
   bottle: { size: [1.4, 1.7], sink: 0.5, turn: 0.9, hit: 0.3 },
 };
+// The sounds, as files in sound/dive/: the loop that plays in place of the sea, and the short ones.
+const LOOP = 'dive/deep';
+const SOUNDS = ['submerge', 'gulp', 'thud', 'plunge', 'rush', 'chomp', 'burble', 'reel'];
 
 const random = (from, to) => from + Math.random() * (to - from);
 const pick = (list) => list[Math.floor(Math.random() * list.length)];
 const clamp = (value, least, most) => Math.min(Math.max(value, least), most);
 const mix = (from, to, part) => from + (to - from) * part;
 
-export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
+export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = () => {}, reducedMotion = false } = {}) {
   if (document.querySelector('.dive')) return;
   const words = WORDS[document.documentElement.lang === 'lt' ? 'lt' : 'en'];
   const hero = document.querySelector('.hero');
@@ -93,6 +98,13 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
   hero?.classList.add('is-offscreen');
   requestAnimationFrame(() => box.classList.add('is-open'));
   box.focus({ preventScroll: true });
+
+  // The sea gives way to the deep, and going under is heard. A short sound is placed left or right by `x`;
+  // `how` makes it lower or higher (pitch) and softer or louder (level) than the file is.
+  const sound = (name, x, how) => playEffect(`dive/${name}`, x, how);
+  swapSea(LOOP);
+  loadSounds(SOUNDS.map((name) => `dive/${name}`));
+  sound('submerge', innerWidth / 2);
 
   let best = 0;
   try {
@@ -567,15 +579,17 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     const kind = pick(Object.keys(JUNK));
     const { size: [least, most], sink, turn } = JUNK[kind];
     const size = unit * random(least, most);
+    const x = random(size, width - size);
     junk.push({
       kind,
       size,
-      x: random(size, width - size),
+      x,
       y: -size,
       fall: height * 0.2 * sink * random(0.8, 1.25) * (1 + 0.3 * Math.min(hard, 1.5)),
       turn: kind === 'anchor' ? random(-0.3, 0.3) : random(0, TAU),
       spin: random(0.5, 1) * turn * pick([-1, 1]),
     });
+    sound('plunge', x, { pitch: clamp(1.45 - 0.42 * sink, 0.75, 1.3), level: 0.8 });   // the heavier, the deeper it sounds
   };
   // A hook comes down anywhere, well apart from another that is down, hangs there for ten to twenty seconds
   // and goes up again.
@@ -585,6 +599,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     let tries = 0;
     do x = random(rim, width - rim); while (++tries < 8 && hooks.some((one) => Math.abs(one.x - x) < hookReach * 3));
     hooks.push({ x, y: -hookSize * 2, toY: y, pace: (y + hookSize * 2) / 1.2, wait: random(10, 20), armed: 0 });
+    sound('plunge', x, { pitch: 1.7, level: 0.4 });   // a small plop: something light came in
   };
   // A bug falls into the water and sinks slowly: a firefly still glowing, a beetle or a caterpillar a little faster.
   const addBug = (kind) => {
@@ -598,7 +613,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     score += points;
     if (harm) harms[harm] = HARMS[harm];
     notes.push({ text: `+${points}`, x: bug.at, y: bug.y - unit * 0.6, life: 1.1 });
-    playEffect('chime', bug.at);
+    sound('gulp', bug.at);
   };
 
   // ---- Meetings ----
@@ -623,6 +638,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     score += FRY;
     me.chew = 0.45;
     notes.push({ text: `+${FRY}`, x: small.x, y: small.y - unit * 0.5, life: 0.8 });
+    sound('gulp', small.x, { pitch: 1.3, level: 0.75 });
   };
   // A small one that runs into the fish from behind bounces off and knocks it aside.
   const bump = (small) => {
@@ -635,6 +651,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     small.vx *= -0.75;
     small.hush = 0.6;
     pop((me.x + small.x) / 2, (me.y + small.y) / 2, 3, 60, 90);
+    sound('thud', small.x, { pitch: 1.2, level: 0.7 });
   };
 
   // ---- The end ----
@@ -657,8 +674,10 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     } else if (kind === 'hook') {
       who.wait = 0;
       Object.assign(ending, { hookY: who.y, lift: 0 });
+      sound('reel', who.x);
+    } else {
+      sound('thud', me.x, { pitch: 0.7, level: 1.3 });
     }
-    playEffect('plop', me.x);
   };
   // Then whatever swims leaves in a hurry and the hooks go up: the water is empty for the last words.
   const scatter = () => {
@@ -706,7 +725,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
         const [x, y] = pick([[1, 0], [-1, 0], [0, 1], [0, -1]]);
         current = { age: 0, life: random(3.2, 4.6) };
         Object.assign(flow, { x, y });
-        playEffect('bubbles', innerWidth / 2);
+        sound('rush', width * (0.5 - 0.3 * x));   // from the side the water comes from
       }
       if (current) {
         current.age += dt;
@@ -936,10 +955,14 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       me.x = mix(at.x, who.x + face * who.length * 0.26, gulp);
       me.y = mix(at.y, who.y, gulp);
       me.spin += dt * 12 * gulp;
+      if (gulp > 0 && !ending.bitten) {
+        ending.bitten = true;   // the jaws shut
+        sound('chomp', who.x);
+      }
       if (settle > 0 && !ending.burst) {
         ending.burst = true;
         pop(who.x + face * who.length * 0.45, who.y, 8, 70, 150);
-        playEffect('bubbles', who.x);
+        sound('burble', who.x);
       }
       if (ending.age >= 0.8) {
         who.speed = face * Math.max(ending.pace, width * 0.2);
@@ -959,6 +982,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       if (me.show === 0 || ending.age >= 1.6) {
         me.show = 0;
         pop(item.x, floor, 7, 90, 70);
+        sound('burble', item.x, { level: 0.8 });
         scatter();
       }
     } else if (state === 'ending') {
@@ -1141,6 +1165,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     box.classList.remove('is-open');
     setTimeout(() => box.remove(), reducedMotion ? 0 : 650);
     hero?.classList.remove('is-offscreen');   // it is about to be in sight again
+    swapSea();                                // and the sea is heard again
     scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
     focusBefore?.focus?.({ preventScroll: true });
   }
