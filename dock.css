@@ -453,6 +453,46 @@ footer::after { z-index: 1; -webkit-mask: var(--art-seabed) 85% 100% / auto 100%
 /* The change from one time of day to the next is a slow cross-fade of the whole page. */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.9s; }
 
+/* ---- The hidden game (dive.js): a sheet of water over the whole window, with the score on it. dock.js opens
+        it after five quick clicks on a buoy or on one spot under the water, or when "fish" is typed. ---- */
+.dive { position: fixed; inset: 0; z-index: 10; overflow: hidden; color: var(--text); opacity: 0; transition: opacity 0.5s 0.25s;
+        background: linear-gradient(var(--deep-1), var(--deep-2) 62%, var(--deep-3));
+        touch-action: none; -webkit-user-select: none; user-select: none; }
+.dive.is-open { opacity: 1; transition-delay: 0s; }
+.dive:focus { outline: none; }
+.dive::before { content: ""; position: absolute; inset: 0 -10vw 30%; opacity: var(--rays); pointer-events: none;
+                background: repeating-linear-gradient(104deg, transparent 0, #fff 5vw, transparent 10vw 16vw, #fff 18.5vw, transparent 21vw 33vw);
+                -webkit-mask: linear-gradient(#000, transparent); mask: linear-gradient(#000, transparent); }
+.dive::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: clamp(60px, 10vw, 130px); pointer-events: none;
+               background: color-mix(in srgb, var(--deep-3) 50%, #000); -webkit-mask: var(--art-seabed) 40% 100% / auto 100% repeat-x; mask: var(--art-seabed) 40% 100% / auto 100% repeat-x; }
+.dive canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: none; }
+.dive.is-over canvas { cursor: default; }
+.dive-score, .dive-best { position: absolute; z-index: 1; left: 18px; margin: 0; color: var(--muted); pointer-events: none; }
+.dive-score { top: 14px; font-size: 15px; }
+.dive-score b { color: var(--text); font-size: 24px; margin-left: 4px; }
+.dive-best { top: 46px; font-size: 13px; }
+.dive-best b { color: var(--text); }
+/* The two minutes, filling up. */
+.dive-time { position: absolute; z-index: 1; left: 50%; top: 22px; width: min(34vw, 300px); height: 6px; translate: -50% 0;
+             border-radius: 3px; background: var(--card-edge); overflow: hidden; }
+.dive-time i { display: block; height: 100%; background: var(--accent); scale: 0 1; transform-origin: 0 50%; }
+.dive-close { position: absolute; z-index: 2; right: 14px; top: 10px; width: 40px; height: 40px; padding: 0; border-radius: 50%;
+              border: 1px solid var(--card-edge); background: var(--card); color: var(--text); cursor: pointer; }
+.dive-close::before, .dive-close::after { content: ""; position: absolute; left: 11px; right: 11px; top: 18px; height: 2px;
+                                          border-radius: 1px; background: currentColor; rotate: 45deg; }
+.dive-close::after { rotate: -45deg; }
+.dive-close:hover { background: var(--card-edge); }
+.dive-hint { position: absolute; z-index: 1; left: 50%; bottom: 20%; width: min(88vw, 520px); margin: 0; translate: -50% 0;
+             text-align: center; color: var(--muted); pointer-events: none; transition: opacity 0.6s 1.6s; }
+.dive.is-quiet .dive-hint { opacity: 0; }
+.dive-end { position: absolute; z-index: 2; left: 50%; top: 50%; width: min(86vw, 340px); padding: 26px 24px 24px; translate: -50% -50%;
+            text-align: center; border-radius: 20px; border: 1px solid var(--card-edge);
+            background: color-mix(in srgb, var(--deep-3) 84%, transparent); }
+.dive-end strong { display: block; font-size: 28px; letter-spacing: -0.01em; }
+.dive-end p { margin: 10px 0 22px; color: var(--muted); }
+.dive-end .button { border: 0; font: inherit; font-weight: 700; cursor: pointer; }
+.dive-leave { margin-left: 8px; background: none; color: var(--text); box-shadow: inset 0 0 0 1px var(--card-edge); }
+
 /* ---- Motion. Nothing here runs when the visitor has asked the system for less motion. ---- */
 @media (prefers-reduced-motion: no-preference) {
   .drift, .flow { animation: slide var(--t) linear infinite; }
@@ -535,7 +575,7 @@ footer::after { z-index: 1; -webkit-mask: var(--art-seabed) 85% 100% / auto 100%
 @keyframes rise { from { translate: 0 40%; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .layer, [data-swap], .flag, .plate, .berth, .berth-no, .orb { transition: none; }
+  .layer, [data-swap], .flag, .plate, .berth, .berth-no, .orb, .dive { transition: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .js .pause { display: none; }

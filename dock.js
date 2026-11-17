@@ -534,6 +534,27 @@
     }
   };
 
+  // ---- The hidden game ----
+  // Five quick clicks on a buoy or on one spot under the water, or the word "fish" typed anywhere, take the
+  // view down under the water, where dive.js runs a short game. Nothing on the page points to it, and the
+  // file is fetched only then.
+  let game = null;
+  const dive = () => {
+    game ??= import(new URL(`dive.js${new URL(script.src).search}`, script.src));
+    game.then((module) => module.dive({ playEffect, reducedMotion }), () => { game = null; });
+  };
+  let bells = [];   // when the latest clicks on a buoy came
+  let taps = [];    // when and where the latest clicks under the water came
+  let typed = '';
+  addEventListener('keydown', (event) => {
+    if (event.key.length !== 1 || event.ctrlKey || event.metaKey || event.altKey || event.target.closest?.('input, textarea')) return;
+    typed = (typed + event.key.toLowerCase()).slice(-5);
+    if (['fish', 'zuvis', 'žuvis'].some((word) => typed.endsWith(word))) {
+      typed = '';
+      dive();
+    }
+  });
+
   // The gull whose middle is within reach of a click, flying by or just startled; the nearest, if there are several.
   // A startled gull darts off, so it counts from twice as far: quick clicks on one spot startle one gull, not a flock.
   const gullNear = (clientX, clientY, reach) => {
@@ -560,6 +581,12 @@
     if (target.closest('.depths')) {
       if (!reducedMotion) bubbles(clientX, clientY);
       playEffect('bubbles', clientX);
+      taps = [...taps.filter(([at, x, y]) => event.timeStamp - at < 2500 && Math.hypot(x - clientX, y - clientY) < 90),
+        [event.timeStamp, clientX, clientY]];
+      if (taps.length >= 5) {
+        taps = [];
+        dive();
+      }
       return;
     }
     if (!target.closest('.hero')) return;
@@ -577,6 +604,11 @@
         ripple(place.left + place.width / 2, place.top + place.height * 0.86, 1.1);
       }
       playEffect('bell', clientX);
+      bells = [...bells.filter((at) => event.timeStamp - at < 2500), event.timeStamp];
+      if (bells.length >= 5) {
+        bells = [];
+        dive();
+      }
       return;
     }
     const callGull = (gull) => {
