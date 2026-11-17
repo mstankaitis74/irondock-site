@@ -1,5 +1,6 @@
 // The hidden game under the water. A fish swims for as long as it can. Bigger fish cross the water, turn on
-// it when it comes close and swallow it; small fry only knock it aside; junk sinks from above; now and then a
+// it when it comes close and swallow it; small fry are food at its mouth and a knock from behind; junk sinks
+// from above; now and then a
 // hook comes down from the pier and hangs for a while; a current pushes now and then; the edges push back.
 // All of it gets worse until something gets the fish: nobody wins, the score is what counts. What falls in
 // alive gives points when the fish eats it. A firefly is safe. A beetle or a caterpillar is worth more and
@@ -14,15 +15,15 @@
 const WORDS = {
   en: {
     name: 'A game under the water',
-    hint: 'Steer with the mouse or the arrow keys. Keep clear of bigger fish, junk and hooks. Fireflies are safe to eat; other bugs pay more but hurt.',
-    touch: 'Hold a finger down and drag: the fish swims that way. Keep clear of bigger fish, junk and hooks. Fireflies are safe to eat; other bugs pay more but hurt.',
+    hint: 'Steer with the mouse or the arrow keys. Keep clear of bigger fish, junk and hooks. Small fish and fireflies are safe to eat; other bugs pay more but hurt.',
+    touch: 'Hold a finger down and drag: the fish swims that way. Keep clear of bigger fish, junk and hooks. Small fish and fireflies are safe to eat; other bugs pay more but hurt.',
     score: 'Score', best: 'Best', newBest: 'New best!', died: 'You died',
     again: 'Again', leave: 'Leave', close: 'Leave the game (Esc)',
   },
   lt: {
     name: 'Žaidimas po vandeniu',
-    hint: 'Valdyk pele arba rodyklėmis. Saugokis didesnių žuvų, šiukšlių ir kabliukų. Jonvabaliai saugūs, kiti vabalai duoda daugiau taškų, bet pakenkia.',
-    touch: 'Laikyk pirštą ir tempk: žuvis plauks ta kryptimi. Saugokis didesnių žuvų, šiukšlių ir kabliukų. Jonvabaliai saugūs, kiti vabalai duoda daugiau taškų, bet pakenkia.',
+    hint: 'Valdyk pele arba rodyklėmis. Saugokis didesnių žuvų, šiukšlių ir kabliukų. Mažos žuvytės ir jonvabaliai saugūs, kiti vabalai duoda daugiau taškų, bet pakenkia.',
+    touch: 'Laikyk pirštą ir tempk: žuvis plauks ta kryptimi. Saugokis didesnių žuvų, šiukšlių ir kabliukų. Mažos žuvytės ir jonvabaliai saugūs, kiti vabalai duoda daugiau taškų, bet pakenkia.',
     score: 'Taškai', best: 'Rekordas', newBest: 'Naujas rekordas!', died: 'Tu žuvai',
     again: 'Dar kartą', leave: 'Išeiti', close: 'Išeiti iš žaidimo (Esc)',
   },
@@ -39,6 +40,7 @@ const BUGS = {
   caterpillar: { points: 200, harm: 'heavy' },
 };
 const HARMS = { dizzy: 10, heavy: 15 };   // for how many seconds each lasts
+const FRY = 2;                            // points for swallowing a small fish
 // The junk that falls in: its size in lengths of the player's fish, how fast it sinks and turns beside the
 // rest, and how much of its size hits.
 const JUNK = {
@@ -142,7 +144,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
   let score = 0;
   let ending = null;    // what got the fish, and how far that has gone
   let others = [];      // the bigger fish
-  let fry = [];         // the small ones, which only bump
+  let fry = [];         // the small ones: food at the fish's mouth, a knock from behind
   let junk = [];
   let bugs = [];        // fireflies, beetles and caterpillars that fell in
   let hooks = [];
@@ -150,7 +152,6 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
   let notes = [];       // the points a bug gave, floating up from where it was eaten
   let harms = {};       // seconds left of being dizzy and of being heavy
   let current = null;   // the current that is pushing, if one is
-  let trail = 0;        // how far it has swum since its last bubble
   let finger = null;    // the finger that steers: where its stick stands and where the finger is now
   let sinceFish = 0;
   let untilFry = 0;
@@ -163,7 +164,8 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
   const push = { x: 0, y: 0 };             // how far the current has carried the fish from where it is steered
   const knock = { x: 0, y: 0 };            // how far a bump has, for a moment
   const back = { x: 0, y: 0 };             // how far an edge or the seabed is pushing it back
-  const me = { x: 0, y: 0, toX: 0, toY: 0, facing: 1, tilt: 0, size: 1, show: 1, spin: 0, mouth: 0, gulp: 0, fat: 0, dizzy: 0 };
+  const breath = { left: 2, wait: 1 };     // bubbles still to come in this breath, and seconds until the next one
+  const me = { x: 0, y: 0, toX: 0, toY: 0, facing: 1, tilt: 0, size: 1, show: 1, spin: 0, mouth: 0, gulp: 0, chew: 0, fat: 0, dizzy: 0 };
   const keys = new Set();
   const bubbles = Array.from({ length: 16 }, () => ({ x: Math.random(), y: Math.random(), size: random(3, 9), speed: random(0.02, 0.06) }));
   const streaks = Array.from({ length: 30 }, () => ({ x: Math.random(), y: Math.random(), long: random(0.06, 0.15), pace: random(0.9, 1.6) }));
@@ -182,7 +184,6 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     notes = [];
     harms = { dizzy: 0, heavy: 0 };
     current = null;
-    trail = 0;
     finger = null;
     sinceFish = -0.8;   // a moment of empty water before the first fish
     untilFry = 2;
@@ -195,7 +196,8 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     Object.assign(push, { x: 0, y: 0 });
     Object.assign(knock, { x: 0, y: 0 });
     Object.assign(back, { x: 0, y: 0 });
-    Object.assign(me, { x: width * 0.25, y: floor * 0.5, toX: width * 0.25, toY: floor * 0.5, facing: 1, tilt: 0, size: 1, show: 1, spin: 0, mouth: 0, gulp: 0, fat: 0, dizzy: 0 });
+    Object.assign(breath, { left: 2, wait: 1 });
+    Object.assign(me, { x: width * 0.25, y: floor * 0.5, toX: width * 0.25, toY: floor * 0.5, facing: 1, tilt: 0, size: 1, show: 1, spin: 0, mouth: 0, gulp: 0, chew: 0, fat: 0, dizzy: 0 });
     end.hidden = true;
     box.classList.remove('is-over');
     scoreText.textContent = 0;
@@ -615,7 +617,14 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     const dy = (me.y - small.y) / (unit * 0.2 * me.size + small.length * 0.2);
     return dx * dx + dy * dy < 1;
   };
-  // A small one that runs into the fish bounces off and knocks it aside.
+  // The fish swallows a small one that comes at its mouth, and is a little slower while it does.
+  const swallow = (small) => {
+    small.eaten = 0;   // seconds since
+    score += FRY;
+    me.chew = 0.45;
+    notes.push({ text: `+${FRY}`, x: small.x, y: small.y - unit * 0.5, life: 0.8 });
+  };
+  // A small one that runs into the fish from behind bounces off and knocks it aside.
   const bump = (small) => {
     const dx = me.x - small.x;
     const dy = me.y - small.y;
@@ -717,7 +726,9 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       // weaves about the place it is steered to.
       me.fat += ((harms.heavy > 0 ? 1 : 0) - me.fat) * Math.min(dt * 4, 1);
       me.dizzy += ((harms.dizzy > 0 ? 1 : 0) - me.dizzy) * Math.min(dt * 4, 1);
-      const slow = 1 - 0.55 * me.fat;
+      me.chew = Math.max(0, me.chew - dt);
+      const busy = me.chew / 0.45;   // one just after it has swallowed a small fish, falling to nothing: it is a little slower
+      const slow = (1 - 0.55 * me.fat) * (1 - 0.4 * busy);
       const lean = finger ? Math.hypot(finger.x - finger.fromX, finger.y - finger.fromY) : 0;
       if (lean > stickReach * 0.1) {
         const pace = Math.min(lean / stickReach, 1) ** 1.3 * reach * 1.3 * slow * dt / lean;
@@ -739,10 +750,10 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       const wantY = me.toY + push.y + knock.y + unit * me.fat + Math.sin(clock * 3.7 + 1) * unit * 0.85 * me.dizzy;
       back.x += (clamp(wantX, rim, width - rim) - wantX - back.x) * Math.min(dt * 3.5, 1);
       back.y += (clamp(wantY, rim, floor - unit * 0.9) - wantY - back.y) * Math.min(dt * 3.5, 1);
-      const pull = Math.min(dt * mix(11, 3.2, me.fat), 1);
+      const pull = Math.min(dt * mix(11, 3.2, me.fat) * (1 - 0.5 * busy), 1);
       let moveX = (clamp(wantX + back.x, unit * 0.7, width - unit * 0.7) - me.x) * pull;
       let moveY = (clamp(wantY + back.y, unit * 0.6, floor - unit * 0.3) - me.y) * pull;
-      const most = reach * mix(8, 0.5, me.fat) * dt;   // the fastest it can go, which matters only when it is full
+      const most = reach * Math.min(mix(8, 0.5, me.fat), mix(8, 0.9, busy)) * dt;   // the fastest it can go, when it is full or busy
       const went = Math.hypot(moveX, moveY);
       if (went > most) {
         moveX *= most / went;
@@ -754,15 +765,21 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       me.tilt = mix(me.tilt, clamp(moveY / (dt || 1) / (unit * 15), -0.5, 0.5), 0.2);
       me.size = 1 + 0.08 * me.fat;
 
-      // A fish that swims leaves a small bubble behind it now and then.
-      trail += Math.hypot(moveX, moveY);
-      if (trail > unit * 1.3) {
-        trail = 0;
-        pops.push({ x: me.x - me.facing * unit * 0.5 * me.size, y: me.y + random(-3, 3), vx: random(-6, 6), vy: -random(14, 30), size: random(1.3, 2.8), life: random(0.5, 0.9) });
+      // The fish breathes: every few seconds two or three small bubbles leave its mouth, one after another.
+      breath.wait -= dt;
+      if (breath.wait <= 0) {
+        pops.push({
+          x: me.x + me.facing * unit * me.size * 0.46, y: me.y - unit * 0.03,
+          vx: me.facing * unit * random(0.05, 0.25), vy: -unit * random(0.5, 0.85), size: Math.max(1.3, unit * random(0.028, 0.048)), life: random(0.9, 1.4),
+        });
+        breath.left -= 1;
+        breath.wait = breath.left > 0 ? random(0.09, 0.17) : random(2, 3.4);
+        if (breath.left <= 0) breath.left = pick([2, 3, 3]);
       }
 
-      // It opens its mouth for a bug that is close, and swallows after one.
-      const snack = bugs.some((bug) => bug.eaten === undefined && Math.hypot(bug.at - me.x, bug.y - me.y) < unit * 1.6);
+      // It opens its mouth for a bug that is close or a small fish in front of it, and swallows after one.
+      const snack = bugs.some((bug) => bug.eaten === undefined && Math.hypot(bug.at - me.x, bug.y - me.y) < unit * 1.6)
+        || fry.some((small) => small.eaten === undefined && me.facing * (small.x - me.x) > 0 && Math.hypot(small.x - me.x, small.y - me.y) < unit * 1.3);
       me.mouth += ((snack ? 0.8 : 0) - me.mouth) * Math.min(dt * 16, 1);
       me.gulp = Math.max(0, me.gulp - dt);
 
@@ -825,10 +842,20 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       other.at = other.y + Math.sin(clock * other.beat + other.phase) * other.weave;
     }
     for (const small of fry) {
-      small.x += small.vx * dt + carryX;
-      small.y += small.vy * dt + carryY;
-      small.vy *= Math.exp(-dt * 1.5);
-      small.hush -= dt;
+      if (small.eaten === undefined) {
+        small.x += small.vx * dt + carryX;
+        small.y += small.vy * dt + carryY;
+        small.vy *= Math.exp(-dt * 1.5);
+        small.hush -= dt;
+      } else {
+        small.eaten += dt;
+        small.x += (me.x + me.facing * unit * me.size * 0.36 - small.x) * Math.min(dt * 22, 1);
+        small.y += (me.y - small.y) * Math.min(dt * 22, 1);
+        if (small.eaten >= 0.14 && !small.gone) {
+          small.gone = true;
+          me.gulp = 0.22;
+        }
+      }
     }
     for (const item of junk) {
       if (item !== ending?.who) item.x += carryX;
@@ -877,7 +904,9 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
         if (bug.eaten === undefined && near(bug.at, bug.y, bug.kind === 'firefly' ? flySize : bugSize * 0.8)) eat(bug);
       }
       for (const small of fry) {
-        if (small.hush <= 0 && brushes(small)) bump(small);
+        if (small.eaten !== undefined || small.hush > 0 || !brushes(small)) continue;
+        if (me.facing * (small.x - me.x) > 0) swallow(small);
+        else bump(small);
       }
       const fish = others.find(meets);
       const item = fish ? null : junk.find((thing) => near(thing.x, thing.y, thing.size * JUNK[thing.kind].hit));
@@ -958,7 +987,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       }
     }
     others = others.filter((other) => other.x > -other.length * 1.5 && other.x < width + other.length * 1.5);
-    fry = fry.filter((small) => small.x > -unit * 5 && small.x < width + unit * 5 && small.y > -unit && small.y < height + unit);
+    fry = fry.filter((small) => !small.gone && small.x > -unit * 5 && small.x < width + unit * 5 && small.y > -unit && small.y < height + unit);
     junk = junk.filter((item) => item.y < height + item.size * 1.5);
     bugs = bugs.filter((bug) => !bug.gone && bug.y < floor + unit * 0.3);
     hooks = hooks.filter((one) => one.wait > 0 || one.y > -hookSize * 3);
@@ -993,7 +1022,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
 
     const taker = ending?.kind === 'fish' ? ending.who : null;
     for (const small of fry) {
-      drawFish(small.x, small.y, small.length, Math.sign(small.vx), 'rgba(255,255,255,0.5)',
+      drawFish(small.x, small.y, small.length * (small.eaten === undefined ? 1 : clamp(1 - small.eaten / 0.14, 0.15, 1)), Math.sign(small.vx), 'rgba(255,255,255,0.5)',
         { wag: Math.sin(clock * 13 + small.phase) * 7, tilt: clamp(small.vy / (Math.abs(small.vx) || 1), -0.6, 0.6) });
     }
     for (const other of others) {
