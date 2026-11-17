@@ -146,8 +146,9 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
 
 /* Seagulls cross the sky by day; --y, --s (size), --t (crossing time), --d (delay) and --w (wingbeat) are set inline. */
 .layer--gulls { top: 0; height: 60em; --f: 0; --depth: 0.3; --reach: 4em; }
-.gull { position: absolute; left: var(--x); top: var(--y); width: calc(4.4em * var(--s)); height: calc(1.9em * var(--s));
-        background: var(--gull); -webkit-mask: var(--art-gull) 0 0 / 100% 100% no-repeat; mask: var(--art-gull) 0 0 / 100% 100% no-repeat; transform-origin: 50% 78%; }
+.gull, .fx-gull { position: absolute; left: var(--x); top: var(--y); width: calc(4.4em * var(--s)); height: calc(1.9em * var(--s));
+                  background: var(--gull); -webkit-mask: var(--art-gull) 0 0 / 100% 100% no-repeat; mask: var(--art-gull) 0 0 / 100% 100% no-repeat; transform-origin: 50% 78%; }
+.gull { pointer-events: auto; cursor: pointer; }
 :root:not([data-sky]) .gull, [data-sky="night"] .gull { display: none; }
 
 /* ---- Far shore ---- */
@@ -181,9 +182,14 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
 .layer--surf .flow  { --period: 80em; --n: 2; --ph: 4.4em; --t: 17s; --c1: var(--sea-3); --c2: var(--deep-1); }
 /* The nearest row rises faster than the page scrolls; this keeps the gap under it filled. */
 .layer--surf > .shift::after { content: ""; position: absolute; left: 0; right: 0; top: 99%; height: 30em; background: var(--deep-1); }
-/* Buoys float behind the nearest wave. */
+/* Buoys float behind the nearest wave, one every 140em. Without dock.js they are one repeated picture;
+   with it each buoy is its own element (--k is its number), so it can be rung with a click. */
 .layer--surf > .shift::before { content: ""; position: absolute; left: 0; right: 0; top: -8.4em; height: 12em;
-                       background: var(--art-buoy) -8em 0 / 140em 12em repeat-x; filter: var(--buoy); }
+                                background: var(--art-buoy) -8em 0 / 140em 12em repeat-x; filter: var(--buoy); }
+.js .layer--surf > .shift::before { display: none; }
+.buoy { position: absolute; left: calc(62em + var(--k) * 140em); top: -8.4em; width: 8em; height: 12em;
+        background: var(--art-buoy) -70em 0 / 140em 12em no-repeat; filter: var(--buoy);
+        transform-origin: 50% 84%; pointer-events: auto; cursor: pointer; }
 
 /* The path of light under the sun or the moon: one piece behind the pier, one in front of it. */
 .layer--glitter { top: 64.2em; height: 34em; --f: 0; --depth: 0.14; --reach: 1.2em; }
@@ -249,6 +255,22 @@ a.mark:hover .lamp::after, .mark.is-hot .lamp::after { opacity: 0.9; animation: 
               background: repeating-linear-gradient(var(--berth) 0 0.35em, transparent 0.35em 1.7em);
               -webkit-mask: radial-gradient(ellipse 50% 100% at 50% 0, #000 35%, transparent); mask: radial-gradient(ellipse 50% 100% at 50% 0, #000 35%, transparent); }
 
+/* ---- Small answers to a click (dock.js): rings and drops on the water, a falling star or a startled gull
+        in the sky, bubbles below the surface. dock.js adds the .fx boxes and animates what it puts in them. ---- */
+.fx { position: absolute; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; }
+.depths > .fx { z-index: -1; }
+.fx > * { position: absolute; left: var(--x); top: var(--y); pointer-events: none; will-change: transform, opacity; }
+.fx-ring { width: calc(18em * var(--s)); height: calc(4.6em * var(--s)); margin: calc(-2.3em * var(--s)) 0 0 calc(-9em * var(--s));
+           border: 0.16em solid var(--glint); border-radius: 50%; opacity: 0; }
+.fx-drop { width: 0.5em; height: 0.5em; margin: -0.25em; border-radius: 50%; background: var(--glint); opacity: 0; }
+.fx-streak { width: 16em; height: 0.22em; margin-left: -16em; border-radius: 0.2em; opacity: 0; transform-origin: 100% 50%;
+             background: linear-gradient(90deg, transparent, #fff); }
+.fx-spark { width: 0.5em; height: 0.5em; margin: -0.25em; background: #fff; opacity: 0;
+            clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+.fx-gull { --s: 1.1; margin: -1em 0 0 -2.4em; }
+.fx-bubble { width: var(--s); height: var(--s); margin: calc(var(--s) / -2); border: 1.5px solid rgba(255,255,255,.6);
+             border-radius: 50%; background: rgba(255,255,255,.08); opacity: 0; }
+
 /* ---- Title ---- */
 /* The title scales with the hero too, so it always ends above the lamps and signs. */
 .hero-text { position: relative; z-index: 2; max-width: 1160px; margin: 0 auto; padding: calc(var(--u) * 6.4) 20px 0;
@@ -285,8 +307,8 @@ html:lang(en) .lang:hover .flag--en, html:lang(lt) .lang:hover .flag--lt { backg
 }
 
 /* Controls in the corner of the scene: .pause stops and starts everything that moves on its own (waves,
-   clouds, gulls, lamps); .sound turns the sea sounds on and off, and .volume appears beside it while they
-   play. None of them does anything without dock.js, which sets .js on <html>. */
+   clouds, gulls, lamps); .sound turns the sea sounds on and off, and .volume appears beside it while the
+   pointer is on either of them (dock.js sets .show-volume). None of them does anything without dock.js, which sets .js on <html>. */
 .hero { --corner: max(20px, calc(50% - 560px)); }
 .pause, .sound { display: none; position: absolute; z-index: 3; right: var(--corner); bottom: 18px;
                  width: 36px; height: 36px; padding: 0; border: 1px solid rgba(255,255,255,.4); border-radius: 50%;
@@ -296,9 +318,10 @@ html:lang(en) .lang:hover .flag--en, html:lang(lt) .lang:hover .flag--lt { backg
 .pause::before { content: ""; position: absolute; inset: 11px 12px; border: solid currentColor; border-width: 0 4px; }
 .is-paused .pause::before { inset: 10px 10px 10px 13px; border: 0; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%); }
 .sound { right: calc(var(--corner) + 46px); }
-.volume { display: none; position: absolute; z-index: 3; right: calc(var(--corner) + 92px); bottom: 18px; width: 104px; height: 36px;
-          margin: 0; accent-color: var(--accent); cursor: pointer; touch-action: none; }
-.has-sound .volume { display: block; }
+.volume { position: absolute; z-index: 3; right: calc(var(--corner) + 92px); bottom: 18px; width: 104px; height: 36px;
+          margin: 0; accent-color: var(--accent); cursor: pointer; touch-action: none;
+          opacity: 0; visibility: hidden; transition: opacity 0.25s, visibility 0.25s; }
+.show-volume .volume { opacity: 1; visibility: visible; }
 .sound::before { content: ""; position: absolute; inset: 7px; background: currentColor; -webkit-mask: var(--art-sound-off) 0 0 / 100% 100% no-repeat; mask: var(--art-sound-off) 0 0 / 100% 100% no-repeat; }
 .has-sound .sound::before { -webkit-mask: var(--art-sound-on) 0 0 / 100% 100% no-repeat; mask: var(--art-sound-on) 0 0 / 100% 100% no-repeat; }
 
@@ -405,7 +428,8 @@ footer::after { height: clamp(120px, 16vw, 210px); background: color-mix(in srgb
   .layer--stars > .shift::after { animation: twinkle 4s ease-in-out infinite alternate; }
   .lamp::after { animation: beacon 5s ease-in-out infinite; }
   .lamp--pulse::after { animation: heartbeat 1.2s ease-out infinite; }
-  .layer--surf > .shift::before { animation: bob 4.5s ease-in-out infinite alternate; }
+  .layer--surf > .shift::before, .buoy { animation: bob 4.5s ease-in-out infinite alternate; }
+  .buoy { animation-delay: calc(var(--k) * -1.7s); }
   .glitter { animation: shimmer 2.2s ease-in-out infinite alternate; }
   .glitter--alt { animation-direction: alternate-reverse; }
   .lang { animation: sway 7s ease-in-out infinite alternate; }
@@ -413,9 +437,9 @@ footer::after { height: clamp(120px, 16vw, 210px); background: color-mix(in srgb
                                  flap var(--w) ease-in-out var(--d) infinite; }
   .gull--back { animation-direction: reverse, alternate, normal; }
   /* The scene rests while it is scrolled out of view or paused with the button. */
-  .hero.is-offscreen :is(.drift, .flow, .gull, .glitter, .lang), .hero.is-offscreen :is(.lamp, .layer--stars > .shift)::after,
+  .hero.is-offscreen :is(.drift, .flow, .gull, .glitter, .lang, .buoy), .hero.is-offscreen :is(.lamp, .layer--stars > .shift)::after,
   .hero.is-offscreen .layer--surf > .shift::before,
-  .is-paused :is(.drift, .flow, .gull, .glitter, .lang), .is-paused :is(.lamp, .layer--stars > .shift)::after,
+  .is-paused :is(.drift, .flow, .gull, .glitter, .lang, .buoy), .is-paused :is(.lamp, .layer--stars > .shift)::after,
   .is-paused .layer--surf > .shift::before { animation-play-state: paused; }
 
   /* Touch devices have no pointer shift, so the layers need no spare width. */

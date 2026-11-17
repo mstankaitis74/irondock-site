@@ -54,12 +54,14 @@
     pauseButton.setAttribute('aria-label', label);
     pauseButton.title = label;
   };
-  pauseButton?.addEventListener('click', () => {
-    root.classList.toggle('is-paused');
+  const setPaused = (paused) => {
+    root.classList.toggle('is-paused', paused);
     labelPauseButton();
-  });
+    holdSound(paused);
+  };
+  pauseButton?.addEventListener('click', () => setPaused(!root.classList.contains('is-paused')));
 
-  // ---- Sound: quiet sea sounds for the time of day, off until the visitor turns them on ----
+  // ---- Sound: quiet sea sounds for the time of day, on unless the visitor has turned them off ----
   // Each file in sound/ is one loop with half a second of its own neighbouring loop on either side.
   // The player repeats only the part in between, so the join never falls on the padding an MP3 carries
   // at its ends, and the last sample of the loop runs straight into the first.
@@ -73,18 +75,18 @@
   let soundOn = false;
   let playing = null;
 
-  // The slider goes from 0 to 100. Loudness is heard on a curve, so the gain follows the square of the
-  // slider: 70, where it starts, plays the files as they are, and 100 is twice that.
-  const volume = () => (volumeSlider ? (volumeSlider.value / 100) ** 2 * 2 : 1);
+  // The slider goes from 0 to 100 and starts at 20. Loudness is heard on a curve, so the gain rises faster
+  // than the slider: 20 is a quiet background, about 65 plays the files as they are, 100 is twice that.
+  const volume = () => (volumeSlider ? (volumeSlider.value / 100) ** 1.5 * 2 : 0.18);
   try {
-    const saved = Number(localStorage.getItem('volume'));
-    if (volumeSlider && saved >= 1 && saved <= 100) volumeSlider.value = saved;
+    const saved = localStorage.getItem('sea-volume');
+    if (volumeSlider && saved !== null && saved >= 0 && saved <= 100) volumeSlider.value = saved;
   } catch {
-    // Storage is blocked: the slider starts in the middle every time.
+    // Storage is blocked: the slider starts at 20 every time.
   }
   volumeSlider?.addEventListener('input', () => {
     try {
-      localStorage.setItem('volume', volumeSlider.value);
+      localStorage.setItem('sea-volume', volumeSlider.value);
     } catch {
       // Not remembered for the next visit.
     }
@@ -136,6 +138,22 @@
     source.start(0, LOOP_START);
     playing = { phase, source, gain };
   }
+  // The pause button silences the sea together with the scene: a short fade, then the audio clock stops,
+  // so the loop carries on from the same wave when the scene runs again.
+  let holding = 0;
+  function holdSound(hold) {
+    if (!audio) return;
+    clearTimeout(holding);
+    const level = playing?.gain.gain;
+    level?.cancelScheduledValues(audio.currentTime);
+    if (hold) {
+      level?.setTargetAtTime(0, audio.currentTime, 0.08);
+      holding = setTimeout(() => audio.suspend(), 400);
+    } else if (soundOn && !document.hidden) {
+      audio.resume();
+      level?.setTargetAtTime(volume(), audio.currentTime, 0.15);
+    }
+  }
   const labelSoundButton = () => {
     if (!soundButton) return;
     const label = soundButton.dataset[soundOn ? 'off' : 'on'];
@@ -147,46 +165,96 @@
     root.classList.toggle('has-sound', on);
     labelSoundButton();
     try {
-      sessionStorage.setItem('sound', on ? 'on' : 'off');
+      localStorage.setItem('sound', on ? 'on' : 'off');
     } catch {
-      // Not remembered for the next page load.
+      // Not remembered for the next visit.
     }
     if (on) {
+      // Turning the sound on while everything is paused sets the scene going again as well.
+      if (root.classList.contains('is-paused')) setPaused(false);
       audio ??= new AudioContext();
       audio.resume();
       playSound();
+      // The short sounds that answer a click are fetched now, so the first click is not late.
+      (window.requestIdleCallback ?? setTimeout)(() => {
+        for (const name of ['plop', 'bell', 'bubbles', 'gull', 'chime']) loadSound(name).catch(() => {});
+      });
     } else {
       fadeOut(0.6);
     }
   };
   if (soundButton) {
-    soundButton.addEventListener('click', () => setSound(!soundOn));
+    // A browser lets sound start only after the visitor's first tap, click or key press on the page
+    // (some start at once on a site the visitor often plays sound on). So the sound is switched on when
+    // the page opens, and every such gesture wakes the audio until it is really running.
+    let audibleBefore = false;
+    const wake = () => {
+      audibleBefore = audio?.state === 'running';
+      if (soundOn && audio && !audibleBefore && !root.classList.contains('is-paused')) audio.resume();
+    };
+    for (const gesture of ['pointerdown', 'pointerup', 'touchend', 'keydown']) {
+      addEventListener(gesture, wake, { capture: true, passive: true });
+    }
+    soundButton.addEventListener('click', () => {
+      // On, but the browser has not let it be heard yet: this click starts it instead of switching it off.
+      if (soundOn && !audibleBefore && !root.classList.contains('is-paused')) audio.resume();
+      else setSound(!soundOn);
+    });
     document.addEventListener('visibilitychange', () => {
       if (!audio) return;
       if (document.hidden) audio.suspend();
-      else if (soundOn) audio.resume();
+      else if (soundOn && !root.classList.contains('is-paused')) audio.resume();
     });
-    // A browser only lets sound start from a tap or a key press. If it was on before this page was
-    // (re)loaded, it comes back with the visitor's first one.
-    let wasOn = false;
+    let wanted = !navigator.connection?.saveData;
     try {
-      wasOn = sessionStorage.getItem('sound') === 'on';
+      if (localStorage.getItem('sound') === 'off') wanted = false;
     } catch {
-      // Storage is blocked: the sound simply starts off.
+      // Storage is blocked: the sound starts on.
     }
-    if (wasOn) {
-      const resume = (event) => {
-        removeEventListener('pointerdown', resume, true);
-        removeEventListener('keydown', resume, true);
-        if (!soundOn && !event.target.closest?.('.sound')) setSound(true);
-      };
-      addEventListener('pointerdown', resume, true);
-      addEventListener('keydown', resume, true);
+    if (wanted) (window.requestIdleCallback ?? setTimeout)(() => setSound(true));
+
+    // The volume slider shows while the pointer or the keyboard focus is on the sound button or on the
+    // slider, and for two seconds after it has left both (dock.css: .show-volume).
+    let hiding = 0;
+    const showVolume = (stay) => {
+      clearTimeout(hiding);
+      hero.classList.add('show-volume');
+      if (!stay) hiding = setTimeout(() => hero.classList.remove('show-volume'), 2000);
+    };
+    for (const control of [soundButton, volumeSlider]) {
+      control?.addEventListener('pointerenter', () => showVolume(true));
+      control?.addEventListener('focus', () => showVolume(true));
+      control?.addEventListener('pointerleave', () => showVolume(false));
+      control?.addEventListener('blur', () => showVolume(false));
     }
   } else {
     hero.querySelector('.sound')?.remove();
     volumeSlider?.remove();
   }
+
+  // One of the short sounds, a little different in pitch every time and placed left or right with the click.
+  const playEffect = async (name, clientX) => {
+    if (!soundOn || audio?.state !== 'running') return;
+    let buffer;
+    try {
+      buffer = await loadSound(name);
+    } catch {
+      return;
+    }
+    const source = audio.createBufferSource();
+    const gain = audio.createGain();
+    source.buffer = buffer;
+    source.playbackRate.value = 0.93 + Math.random() * 0.14;
+    gain.gain.value = volume();
+    let output = source.connect(gain);
+    if (audio.createStereoPanner) {
+      const panner = audio.createStereoPanner();
+      panner.pan.value = Math.max(-1, Math.min(1, (clientX / innerWidth) * 2 - 1)) * 0.6;
+      output = output.connect(panner);
+    }
+    output.connect(audio.destination);
+    source.start();
+  };
 
   // The scene rests and the parallax stops updating while it is scrolled out of view.
   let heroVisible = true;
@@ -258,6 +326,159 @@
     }
     schedule();
   }
+
+  // ---- Small answers to a click ----
+  // Water makes rings and throws a few drops, a buoy rocks and rings its bell, the night sky drops a star,
+  // the day sky startles a gull, the pier's nearest lamp flares, and below the surface bubbles rise.
+  // Everything is a throwaway element with one animation (dock.css: .fx), removed when it ends.
+  const layerShift = (name) => hero.querySelector(`.layer--${name} > .shift`);
+  const surf = layerShift('surf');
+  const heroFx = document.createElement('div');
+  heroFx.className = 'fx';
+  hero.insertBefore(heroFx, hero.querySelector('.hero-text'));
+  const depths = document.querySelector('.depths');
+  const depthsFx = document.createElement('div');
+  depthsFx.className = 'fx';
+  depths?.prepend(depthsFx);
+
+  // One buoy every 140em of the nearest wave row, as many as its width needs (dock.css: .buoy).
+  const placeBuoys = () => {
+    const wanted = Math.ceil(surf.offsetWidth / (hero.offsetHeight * 1.4));
+    for (let k = surf.querySelectorAll('.buoy').length; k < wanted; k++) {
+      const buoy = document.createElement('i');
+      buoy.className = 'buoy';
+      buoy.style.setProperty('--k', k);
+      surf.prepend(buoy);
+    }
+  };
+  placeBuoys();
+  addEventListener('resize', placeBuoys);
+
+  const random = (from, to) => from + Math.random() * (to - from);
+  const spawn = (box, className, x, y, size, frames, timing) => {
+    if (box.childElementCount > 80) return null;   // a storm of clicks stays cheap
+    const piece = document.createElement('i');
+    piece.className = className;
+    piece.style.cssText = `--x: ${x.toFixed(1)}px; --y: ${y.toFixed(1)}px; --s: ${size}`;
+    box.append(piece);
+    const done = () => piece.remove();
+    piece.animate(frames, { fill: 'forwards', ...timing }).finished.then(done, done);
+    return piece;
+  };
+  const ripple = (x, y, size) => {
+    for (let ring = 0; ring < 3; ring++) {
+      spawn(heroFx, 'fx-ring', x, y, size, [{ scale: 0.12, opacity: 0.9 }, { scale: 1, opacity: 0 }],
+        { duration: 1500, delay: ring * 230, easing: 'cubic-bezier(0.2, 0.6, 0.3, 1)' });
+    }
+  };
+  const splash = (x, y, size) => {
+    const em = hero.offsetHeight / 100;
+    ripple(x, y, size);
+    for (let drop = 0; drop < 6; drop++) {
+      const reach = random(-3.4, 3.4) * em * size;
+      const height = random(3, 7) * em * size;
+      spawn(heroFx, 'fx-drop', x, y, size, [
+        { translate: '0 0', opacity: 1, easing: 'cubic-bezier(0.2, 0.7, 0.5, 1)' },
+        { translate: `${reach * 0.6}px ${-height}px`, opacity: 1, offset: 0.45, easing: 'cubic-bezier(0.5, 0, 0.9, 0.5)' },
+        { translate: `${reach}px ${em}px`, opacity: 0 },
+      ], { duration: random(650, 950) });
+    }
+  };
+  const fallingStar = (x, y) => {
+    const em = hero.offsetHeight / 100;
+    const left = Math.random() < 0.5;
+    const streak = spawn(heroFx, 'fx-streak', x, y, 1, [
+      { translate: '0 0', opacity: 0 },
+      { opacity: 1, offset: 0.2 },
+      { translate: `${(left ? -34 : 34) * em}px ${15 * em}px`, opacity: 0 },
+    ], { duration: 900, easing: 'cubic-bezier(0.3, 0, 0.6, 1)' });
+    if (streak) streak.style.rotate = left ? '156deg' : '24deg';
+    for (let spark = 0; spark < 5; spark++) {
+      spawn(heroFx, 'fx-spark', x + random(-3, 3) * em, y + random(-3, 3) * em, 1,
+        [{ scale: 0, opacity: 0 }, { scale: random(1, 2.2), opacity: 1 }, { scale: 0, opacity: 0 }],
+        { duration: random(500, 900), delay: random(0, 250) });
+    }
+  };
+  const startledGull = (x, y) => {
+    const em = hero.offsetHeight / 100;
+    const gull = spawn(heroFx, 'fx-gull', x, y, 1.1, [
+      { translate: '0 0', opacity: 0 },
+      { opacity: 1, offset: 0.12 },
+      { translate: `${(Math.random() < 0.5 ? -1 : 1) * random(18, 30) * em}px ${-random(16, 24) * em}px`, opacity: 0 },
+    ], { duration: 2600, easing: 'cubic-bezier(0.3, 0.4, 0.4, 1)' });
+    gull?.animate([{ scale: '1 1' }, { scale: '1 -0.55' }, { scale: '1 1' }], { duration: 380, iterations: 7 });
+  };
+  const bubbles = (x, y) => {
+    for (let bubble = 0; bubble < 7; bubble++) {
+      const drift = random(-26, 26);
+      const rise = random(130, 260);
+      spawn(depthsFx, 'fx-bubble', x + random(-14, 14), y + random(-8, 8), `${random(6, 18).toFixed(0)}px`, [
+        { translate: '0 0', opacity: 0, scale: 0.4 },
+        { translate: `${drift}px ${-rise * 0.35}px`, opacity: 0.9, scale: 1, offset: 0.3 },
+        { translate: `${-drift * 0.6}px ${-rise * 0.7}px`, opacity: 0.7, offset: 0.7 },
+        { translate: `${drift * 0.4}px ${-rise}px`, opacity: 0 },
+      ], { duration: random(1500, 2500), delay: random(0, 280), easing: 'ease-out' });
+    }
+  };
+
+  // A press that turns into a drag (a swipe, a text selection, the slider) is not a click on the scene.
+  let pressedAt = null;
+  addEventListener('pointerdown', (event) => { pressedAt = [event.clientX, event.clientY]; }, { capture: true, passive: true });
+  document.addEventListener('click', (event) => {
+    const target = event.target;
+    if (root.classList.contains('is-paused') || !target.closest || target.closest('a, button, input')) return;
+    if (pressedAt && Math.hypot(event.clientX - pressedAt[0], event.clientY - pressedAt[1]) > 8) return;
+    if (String(getSelection())) return;
+    const { clientX, clientY } = event;
+
+    if (target.closest('.depths')) {
+      const box = depthsFx.getBoundingClientRect();
+      if (!reducedMotion) bubbles(clientX - box.left, clientY - box.top);
+      playEffect('bubbles', clientX);
+      return;
+    }
+    if (!target.closest('.hero')) return;
+    const box = heroFx.getBoundingClientRect();
+    const em = box.height / 100;
+    const x = clientX - box.left;
+    const y = clientY - box.top;
+
+    const buoy = target.closest('.buoy');
+    if (buoy) {
+      const place = buoy.getBoundingClientRect();
+      if (!reducedMotion) {
+        buoy.animate([{ rotate: '0deg' }, { rotate: '-11deg' }, { rotate: '8deg' }, { rotate: '-5deg' }, { rotate: '3deg' }, { rotate: '-1.5deg' }, { rotate: '0deg' }],
+          { duration: 2200, easing: 'ease-out' });
+        ripple(place.left + place.width / 2 - box.left, place.top + place.height * 0.86 - box.top, 1.1);
+      }
+      playEffect('bell', clientX);
+      return;
+    }
+    const gull = target.closest('.gull');
+    if (gull) {
+      if (!reducedMotion) gull.animate([{ scale: '1 1' }, { scale: '1 -0.6' }, { scale: '1 1' }], { duration: 300, iterations: 5 });
+      playEffect('gull', clientX);
+      return;
+    }
+    const waterline = layerShift('swell').getBoundingClientRect().top + em;
+    if (clientY > waterline) {
+      // Nearer water is lower on the screen, so its rings are larger.
+      if (!reducedMotion) splash(x, y, 0.55 + 1.1 * (clientY - waterline) / Math.max(box.bottom - waterline, 1));
+      playEffect('plop', clientX);
+    } else if (clientY < layerShift('dock').getBoundingClientRect().top + em) {
+      const starry = ['night', 'dusk', undefined].includes(root.dataset.sky);
+      if (!reducedMotion) (starry ? fallingStar : startledGull)(x, y);
+      playEffect(starry ? 'chime' : 'gull', clientX);
+    } else if (!reducedMotion) {
+      // The pier: its nearest lamp flares for a moment.
+      const lamps = [...hero.querySelectorAll('.lamp')];
+      const nearest = lamps.reduce((best, lamp) => {
+        const distance = Math.abs(lamp.getBoundingClientRect().left - clientX);
+        return distance < best.distance ? { lamp, distance } : best;
+      }, { lamp: null, distance: Infinity }).lamp;
+      nearest?.animate([{ opacity: 1, offset: 0.25 }], { duration: 900, pseudoElement: '::after', easing: 'ease-out' });
+    }
+  });
 
   // ---- Berth list ----
   // On an app page the list is one row; on a narrow screen the row scrolls, so the current app is brought to the middle.
