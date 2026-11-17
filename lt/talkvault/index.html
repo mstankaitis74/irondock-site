@@ -28,7 +28,7 @@ t=d.getHours()+d.getMinutes()/60-12.4-z,s=Math.abs(t);return s<h-.7?"day":s<h+.7
 var o;try{o=sessionStorage.getItem("sky")}catch(e){}
 window.skyNow=now;document.documentElement.dataset.sky=/^(dawn|day|dusk|night)$/.test(o)?o:now()})()
 </script>
-<link rel="stylesheet" href="../../dock.css?v=7">
+<link rel="stylesheet" href="../../dock.css?v=8">
 <script type="application/ld+json">
 [
   {
@@ -110,7 +110,7 @@ window.skyNow=now;document.documentElement.dataset.sky=/^(dawn|day|dusk|night)$/
     <span class="flag flag--lt" aria-hidden="true">LT</span>
   </a>
   <button class="sound" type="button" data-sync="sound" data-on="Įjungti jūros garsus" data-off="Išjungti jūros garsus" aria-label="Įjungti jūros garsus" title="Įjungti jūros garsus"></button>
-  <input class="volume" type="range" min="0" max="100" value="20" data-sync="volume" aria-label="Garsumas" title="Garsumas">
+  <input class="volume" type="range" min="0" max="100" value="10" data-sync="volume" aria-label="Garsumas" title="Garsumas">
   <button class="pause" type="button" data-sync="pause" data-pause="Sustabdyti animaciją" data-play="Paleisti animaciją" aria-label="Sustabdyti animaciją" title="Sustabdyti animaciją"></button>
 </header>
 
@@ -165,6 +165,6 @@ window.skyNow=now;document.documentElement.dataset.sky=/^(dawn|day|dusk|night)$/
 
 <footer data-swap-lang="footer">Kontaktai: <a href="mailto:info@irondock.dev">info@irondock.dev</a></footer>
 </div>
-<script src="../../dock.js?v=7"></script>
+<script src="../../dock.js?v=8"></script>
 </body>
 </html>

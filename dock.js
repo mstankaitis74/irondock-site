@@ -75,14 +75,14 @@
   let soundOn = false;
   let playing = null;
 
-  // The slider goes from 0 to 100 and starts at 20. Loudness is heard on a curve, so the gain rises faster
-  // than the slider: 20 is a quiet background, about 65 plays the files as they are, 100 is twice that.
-  const volume = () => (volumeSlider ? (volumeSlider.value / 100) ** 1.5 * 2 : 0.18);
+  // The slider goes from 0 to 100 and starts at 10. Loudness is heard on a curve, so the gain rises faster
+  // than the slider: 10 is a quiet background, about 65 plays the files as they are, 100 is twice that.
+  const volume = () => (volumeSlider ? (volumeSlider.value / 100) ** 1.5 * 2 : 0.06);
   try {
     const saved = localStorage.getItem('sea-volume');
     if (volumeSlider && saved !== null && saved >= 0 && saved <= 100) volumeSlider.value = saved;
   } catch {
-    // Storage is blocked: the slider starts at 20 every time.
+    // Storage is blocked: the slider starts at 10 every time.
   }
   volumeSlider?.addEventListener('input', () => {
     try {
