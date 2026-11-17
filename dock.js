@@ -446,6 +446,19 @@
     }
   };
 
+  // The gull whose middle is within reach of a click, flying by or just startled; the nearest, if there are several.
+  // A startled gull darts off, so it counts from twice as far: quick clicks on one spot startle one gull, not a flock.
+  const gullNear = (clientX, clientY, reach) => {
+    let nearest = null;
+    for (const gull of hero.querySelectorAll('.gull, .fx-gull')) {
+      const place = gull.getBoundingClientRect();
+      const distance = Math.hypot(place.left + place.width / 2 - clientX, place.top + place.height / 2 - clientY)
+        / (gull.matches('.fx-gull') ? 2 : 1);
+      if (place.width && distance < reach) [nearest, reach] = [gull, distance];
+    }
+    return nearest;
+  };
+
   // A press that turns into a drag (a swipe, a text selection, the slider) is not a click on the scene.
   let pressedAt = null;
   addEventListener('pointerdown', (event) => { pressedAt = [event.clientX, event.clientY]; }, { capture: true, passive: true });
@@ -479,10 +492,16 @@
       playEffect('bell', clientX);
       return;
     }
+    const callGull = (gull) => {
+      // A gull flying by beats its wings; one that was just startled is beating them already.
+      if (!reducedMotion && gull.matches('.gull')) {
+        gull.animate([{ scale: '1 1' }, { scale: '1 -0.6' }, { scale: '1 1' }], { duration: 300, iterations: 5 });
+      }
+      playEffect('gull', clientX);
+    };
     const gull = target.closest('.gull');
     if (gull) {
-      if (!reducedMotion) gull.animate([{ scale: '1 1' }, { scale: '1 -0.6' }, { scale: '1 1' }], { duration: 300, iterations: 5 });
-      playEffect('gull', clientX);
+      callGull(gull);
       return;
     }
     const waterline = layerShift('swell').getBoundingClientRect().top + em;
@@ -491,9 +510,14 @@
       if (!reducedMotion) splash(x, y, 0.55 + 1.1 * (clientY - waterline) / Math.max(box.bottom - waterline, 1));
       playEffect('plop', clientX);
     } else if (clientY < layerShift('dock').getBoundingClientRect().top + em) {
+      // A click that lands close to a gull is meant for that gull: it calls, and nothing new appears in the sky.
+      const near = gullNear(clientX, clientY, Math.max(9 * em, 56));
       const starry = ['night', 'dusk', undefined].includes(root.dataset.sky);
-      if (!reducedMotion) (starry ? fallingStar : startledGull)(x, y);
-      playEffect(starry ? 'chime' : 'gull', clientX);
+      if (near) callGull(near);
+      else {
+        if (!reducedMotion) (starry ? fallingStar : startledGull)(x, y);
+        playEffect(starry ? 'chime' : 'gull', clientX);
+      }
     } else if (!reducedMotion) {
       // The pier: its nearest lamp flares for a moment.
       const lamps = [...hero.querySelectorAll('.lamp')];
