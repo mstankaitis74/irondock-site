@@ -409,6 +409,9 @@ body:not([data-berth="0"]) .berth[aria-current="page"] strong { text-decoration:
 .button { display: inline-block; padding: 14px 22px; border-radius: 14px; background: var(--accent); color: var(--ink);
           font-weight: 700; text-decoration: none; }
 .button:hover { filter: brightness(1.08); }
+/* Where a store link will be: the app is still being made, so this is a label, not a link. */
+.button--soon { background: none; color: var(--text); border: 1px dashed var(--card-edge); cursor: default; }
+.button--soon:hover { filter: none; }
 .hash { font-size: 13px; }
 .hash code { overflow-wrap: anywhere; -webkit-user-select: all; user-select: all; }
 /* Fish pass behind the text; where the browser can, they swim as the page scrolls (see the end of this file). */

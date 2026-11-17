@@ -25,3 +25,7 @@ Irondock website, served by GitHub Pages at https://irondock.dev.
 1. Copy an app folder (and its `lt/` twin), change `<head>` including the `hreflang` links, `data-berth`, `--cam`, the hero text, the flags' link and `<main>`.
 2. In every page of both languages add its nav card, its `.mark` (dock layer) and its `.reflection` (water layer) with the next `--n` and a `--berth` colour, and raise `--stations` on `.hero` to the new last berth number.
 3. Add both URLs to `sitemap.xml`.
+
+## Google Play links
+
+The Beatsy and Žalias KET pages (both languages) start with a block that says the app is in development. When an app is published, replace the `<span class="button button--soon">` in that block with `<a class="button" href="https://play.google.com/store/apps/details?id=…">Get it on Google Play</a>` (`Atsisiųsti iš Google Play` on the Lithuanian page) and delete the paragraph under it; the comment in the block says the same.
