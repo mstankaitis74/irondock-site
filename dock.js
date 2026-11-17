@@ -365,6 +365,22 @@
   const depthsFx = document.createElement('div');
   depthsFx.className = 'fx';
   depths?.prepend(depthsFx);
+  // What happens on the water lives in the water. Each row of waves has a box of its own that moves with the
+  // row and is clipped at its wave line (dock.css: .fx--sea). The pier stands between the far row and the two
+  // nearer ones, so it covers what is behind it and nothing on the water is drawn over it.
+  const seaFx = ['swell', 'water', 'surf'].map((name) => {
+    const box = document.createElement('div');
+    box.className = 'fx fx--sea';
+    layerShift(name).append(box);
+    return box;
+  });
+  // The boxes for a point on the water: the row it is on and every row behind that one, so whatever reaches
+  // past the row's edge shows on the water further back. A row's wave line sits a little below its layer's top.
+  const seaAt = (clientY) => {
+    const em = hero.offsetHeight / 100;
+    const line = (name, below) => layerShift(name).getBoundingClientRect().top + below * em;
+    return seaFx.slice(0, clientY >= line('surf', 2.05) ? 3 : clientY >= line('water', 1.4) ? 2 : 1);
+  };
 
   // One buoy every 140em of the nearest wave row, as many as its width needs (dock.css: .buoy).
   const placeBuoys = () => {
@@ -390,19 +406,26 @@
     piece.animate(frames, { fill: 'forwards', ...timing }).finished.then(done, done);
     return piece;
   };
-  const ripple = (x, y, size) => {
+  // The same piece in several boxes, at one place on the screen: each box shows the part that falls inside it.
+  const spawnIn = (boxes, className, clientX, clientY, size, frames, timing) => boxes.map((box) => {
+    const place = box.getBoundingClientRect();
+    return spawn(box, className, clientX - place.left, clientY - place.top, size, frames, timing);
+  });
+  const ripple = (clientX, clientY, size) => {
+    const boxes = seaAt(clientY);
     for (let ring = 0; ring < 3; ring++) {
-      spawn(heroFx, 'fx-ring', x, y, size, [{ scale: 0.12, opacity: 0.9 }, { scale: 1, opacity: 0 }],
+      spawnIn(boxes, 'fx-ring', clientX, clientY, size, [{ scale: 0.12, opacity: 0.9 }, { scale: 1, opacity: 0 }],
         { duration: 1500, delay: ring * 230, easing: 'cubic-bezier(0.2, 0.6, 0.3, 1)' });
     }
   };
-  const splash = (x, y, size) => {
+  const splash = (clientX, clientY, size) => {
     const em = hero.offsetHeight / 100;
-    ripple(x, y, size);
+    const boxes = seaAt(clientY);
+    ripple(clientX, clientY, size);
     for (let drop = 0; drop < 6; drop++) {
       const reach = random(-3.4, 3.4) * em * size;
       const height = random(3, 7) * em * size;
-      spawn(heroFx, 'fx-drop', x, y, size, [
+      spawnIn(boxes, 'fx-drop', clientX, clientY, size, [
         { translate: '0 0', opacity: 1, easing: 'cubic-bezier(0.2, 0.7, 0.5, 1)' },
         { translate: `${reach * 0.6}px ${-height}px`, opacity: 1, offset: 0.45, easing: 'cubic-bezier(0.5, 0, 0.9, 0.5)' },
         { translate: `${reach}px ${em}px`, opacity: 0 },
@@ -427,7 +450,7 @@
         { duration: random(500, 900), delay: random(0, 250) });
     }
   };
-  // At night a star falls by itself now and then: one every five to ten minutes, anywhere in the sky, without
+  // At night a star falls by itself now and then: one every one to five minutes, anywhere in the sky, without
   // a sound. It skips its turn while nobody can see it: the tab is hidden, the scene is scrolled away or paused.
   const waitForStar = () => setTimeout(() => {
     const unseen = document.hidden || !heroVisible || root.classList.contains('is-paused');
@@ -435,7 +458,7 @@
       fallingStar(random(0.1, 0.9) * hero.offsetWidth, random(8, 34) * hero.offsetHeight / 100);
     }
     waitForStar();
-  }, random(5, 10) * 60000);
+  }, random(1, 5) * 60000);
   waitForStar();
 
   const startledGull = (x, y) => {
@@ -451,8 +474,8 @@
   // surface, and the surface itself lies behind it, up to the horizon. While that edge is in view and within
   // reach, the bubbles go all the way up and break through somewhere on the surface, each in its own place;
   // otherwise they fade on the way.
-  // The scene and the water under it are two boxes that each clip their own content, so a bubble whose path
-  // crosses from one into the other is drawn in both, and each box shows its own part of it.
+  // The water under the scene and the rows of waves in it are boxes that each clip their own content, so a
+  // bubble whose path crosses from the one into the others is drawn in all of them, and each shows its own part.
   const bubbles = (clientX, clientY) => {
     const scene = heroFx.getBoundingClientRect();
     const em = scene.height / 100;
@@ -485,22 +508,22 @@
       const timing = surfacing
         ? { duration: Math.max(800, rise / random(0.12, 0.19)), delay: random(0, 280) }
         : { duration: random(1500, 2500), delay: random(0, 280), easing: 'ease-out' };
-      let piece = null;
-      for (const box of y - rise - size < scene.bottom ? [depthsFx, heroFx] : [depthsFx]) {
-        const place = box.getBoundingClientRect();
-        piece = spawn(box, 'fx-bubble', x - place.left, y - place.top, `${size.toFixed(0)}px`, frames, timing) ?? piece;
-      }
+      const boxes = y - rise - size < scene.bottom ? [depthsFx, ...seaFx] : [depthsFx];
+      const piece = spawnIn(boxes, 'fx-bubble', x, y, `${size.toFixed(0)}px`, frames, timing).find(Boolean);
       // Where it breaks through, the surface answers with a ring and a couple of drops: smaller the further back.
       if (surfacing) {
         piece?.getAnimations()[0]?.finished.then(() => {
-          const left = x + drift * 0.4 - scene.left;
-          const top = y - rise - scene.top;
+          // The page may have been scrolled since the click: the place is kept relative to the scene.
+          const now = heroFx.getBoundingClientRect();
+          const left = x + drift * 0.4 - scene.left + now.left;
+          const top = y - rise - scene.top + now.top;
           const near = 1 - 0.04 * back / em;
-          spawn(heroFx, 'fx-ring', left, top, (0.26 + size / 50) * near,
+          const rows = seaAt(top);
+          spawnIn(rows, 'fx-ring', left, top, (0.26 + size / 50) * near,
             [{ scale: 0.12, opacity: 0.9 }, { scale: 1, opacity: 0 }], { duration: 1000, easing: 'ease-out' });
           for (let drop = 0; drop < 2; drop++) {
             const reach = random(-1.4, 1.4) * em * near;
-            spawn(heroFx, 'fx-drop', left, top, 1, [
+            spawnIn(rows, 'fx-drop', left, top, 1, [
               { translate: '0 0', opacity: 1, easing: 'cubic-bezier(0.2, 0.7, 0.5, 1)' },
               { translate: `${reach * 0.6}px ${-random(1.2, 2.6) * em * near}px`, opacity: 1, offset: 0.45, easing: 'cubic-bezier(0.5, 0, 0.9, 0.5)' },
               { translate: `${reach}px ${0.3 * em}px`, opacity: 0 },
@@ -551,7 +574,7 @@
       if (!reducedMotion) {
         buoy.animate([{ rotate: '0deg' }, { rotate: '-11deg' }, { rotate: '8deg' }, { rotate: '-5deg' }, { rotate: '3deg' }, { rotate: '-1.5deg' }, { rotate: '0deg' }],
           { duration: 2200, easing: 'ease-out' });
-        ripple(place.left + place.width / 2 - box.left, place.top + place.height * 0.86 - box.top, 1.1);
+        ripple(place.left + place.width / 2, place.top + place.height * 0.86, 1.1);
       }
       playEffect('bell', clientX);
       return;
@@ -571,7 +594,7 @@
     const waterline = layerShift('swell').getBoundingClientRect().top + em;
     if (clientY > waterline) {
       // Nearer water is lower on the screen, so its rings are larger.
-      if (!reducedMotion) splash(x, y, 0.55 + 1.1 * (clientY - waterline) / Math.max(box.bottom - waterline, 1));
+      if (!reducedMotion) splash(clientX, clientY, 0.55 + 1.1 * (clientY - waterline) / Math.max(box.bottom - waterline, 1));
       playEffect('plop', clientX);
     } else if (clientY < layerShift('dock').getBoundingClientRect().top + em) {
       // A click that lands close to a gull is meant for that gull: it calls, and nothing new appears in the sky.

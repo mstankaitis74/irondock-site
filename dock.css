@@ -261,6 +261,11 @@ a.mark:hover .lamp::after, .mark.is-hot .lamp::after { opacity: 0.9; animation: 
         in the sky, bubbles below the surface. dock.js adds the .fx boxes and animates what it puts in them. ---- */
 .fx { position: absolute; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; }
 .depths > .fx { z-index: -1; }
+/* The water's own boxes, one inside each row of waves. Each starts at its row's wave line, so a ring or a drop
+   shows on that row and on the water behind it, and the pier in between covers what is behind it. */
+.layer--swell .fx--sea { top: -14em; }                  /* drops fly up past the horizon */
+.layer--water .fx--sea { top: 1.9em; }
+.layer--surf .fx--sea { top: 2.1em; bottom: -30em; }    /* and it reaches down over the filler under the nearest row */
 .fx > * { position: absolute; left: var(--x); top: var(--y); pointer-events: none; will-change: transform, opacity; }
 .fx-ring { width: calc(18em * var(--s)); height: calc(4.6em * var(--s)); margin: calc(-2.3em * var(--s)) 0 0 calc(-9em * var(--s));
            border: 0.16em solid var(--glint); border-radius: 50%; opacity: 0; }
