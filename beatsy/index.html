@@ -28,7 +28,7 @@ t=d.getHours()+d.getMinutes()/60-12.4-z,s=Math.abs(t);return s<h-.7?"day":s<h+.7
 var o;try{o=sessionStorage.getItem("sky")}catch(e){}
 window.skyNow=now;document.documentElement.dataset.sky=/^(dawn|day|dusk|night)$/.test(o)?o:now()})()
 </script>
-<link rel="stylesheet" href="../dock.css?v=6">
+<link rel="stylesheet" href="../dock.css?v=7">
 <script type="application/ld+json">
 [
   {
@@ -162,6 +162,6 @@ window.skyNow=now;document.documentElement.dataset.sky=/^(dawn|day|dusk|night)$/
 
 <footer data-swap-lang="footer">Contact: <a href="mailto:info@irondock.dev">info@irondock.dev</a></footer>
 </div>
-<script src="../dock.js?v=6"></script>
+<script src="../dock.js?v=7"></script>
 </body>
 </html>

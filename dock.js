@@ -633,11 +633,9 @@
     drag.lastX = event.clientX;
     drag.lastTime = event.timeStamp;
     drag.moved = -dx / drag.step;   // in berths; positive = towards the next berth
-    let cam = drag.from + drag.moved;
-    // Past either end of the dock the scene resists: it follows at a third of the finger's travel.
-    if (cam < 0) cam /= 3;
-    if (cam > lastBerth) cam = lastBerth + (cam - lastBerth) / 3;
-    follow(cam);
+    // The scene stops at the first and the last berth: the layers end there, and a finger that pulls
+    // further would drag their edges into view.
+    follow(Math.min(Math.max(drag.from + drag.moved, 0), lastBerth));
   });
 
   const endDrag = (event) => {
