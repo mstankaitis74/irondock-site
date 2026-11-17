@@ -1,189 +1,458 @@
+/* Irondock: one harbour scene shared by every page, and the water under the dock below it.
+   Every colour that changes with the time of day is a token. Night is the default; the script in
+   <head> sets data-sky on <html> to dawn, day, dusk or night, and dock.js switches it when the
+   sun or moon is clicked. */
 :root {
-  --bg: #081330; --text: #ffffff; --muted: #c9d4f0; --accent: #ff8a7a; --card: rgba(255,255,255,0.06);
-  --sky-top: #14295a; --sky-mid: #1d3a72; --sky-horizon: #27498a;
-  --far: #173063; --iron: #0c1838; --iron-edge: #46599a;
+  color-scheme: dark;
+  --ink: #0c1838; --text: #fff; --accent: #ff8a7a;
+  --card: rgba(255,255,255,.07); --card-edge: rgba(255,255,255,.15);
   /* Each berth (app) has its own lamp colour; set --berth on its nav card, mark and reflection. */
   --berth: var(--accent);
+
+  --muted: #c9d4f0; --link: #ff8a7a;
+  --sky-1: #14295a; --sky-2: #1d3a72; --sky-3: #27498a; --sky-4: #2c4f93; --haze: rgba(255,138,122,.16);
+  --orb: #fdf3d6; --orb-halo: rgba(253,243,214,.2); --orb-top: 22em; --orb-size: 10em; --orb-x: .77;
+  --orb-marks: radial-gradient(circle at 34% 40%, rgba(12,24,56,.13) 0 13%, transparent 14%),
+               radial-gradient(circle at 64% 62%, rgba(12,24,56,.1) 0 9%, transparent 10%),
+               radial-gradient(circle at 60% 27%, rgba(12,24,56,.09) 0 6%, transparent 7%);
+  --stars: 1; --cloud: #2c4b8f; --cloud-far: .5; --cloud-near: .7;
+  --far-1: #223f7c; --far-2: #173063;
+  --sea-1: #1c3b7b; --sea-2: #16316d; --sea-3: #10265a;
+  --deep-1: #0b1a40; --deep-2: #081330; --deep-3: #050b20;
+  --crest: rgba(201,212,240,.2); --glint: rgba(253,243,214,.6);
+  --iron: #0c1838; --iron-2: #091330; --iron-edge: #46599a;
+  --lamp: 1; --hero-text: #fff; --hero-muted: #c9d4f0; --gull: #0c1838; --rays: .05; --buoy: brightness(.62) saturate(.85);
 }
+[data-sky="day"] {
+  --muted: #e6eefc; --link: #ffd9cf;
+  --sky-1: #4a9fe6; --sky-2: #7fc2f2; --sky-3: #c4e6fa; --sky-4: #dff2fc; --haze: rgba(255,255,255,.5);
+  --orb: #fff8dc; --orb-halo: rgba(255,250,225,.6); --orb-top: 18em; --orb-size: 11em; --orb-marks: none;
+  --stars: 0; --cloud: #fff; --cloud-far: .8; --cloud-near: .96;
+  --far-1: #a5d0f1; --far-2: #6faee2;
+  --sea-1: #52a9e6; --sea-2: #3791db; --sea-3: #2580cf;
+  --deep-1: #165ea8; --deep-2: #114b90; --deep-3: #0b3672;
+  --crest: rgba(255,255,255,.5); --glint: rgba(255,255,255,.85);
+  --iron: #15356f; --iron-2: #102a5c; --iron-edge: #86b6ee;
+  --lamp: .22; --hero-text: #0b2350; --hero-muted: #0e2a5e; --gull: #173a73; --rays: .13; --buoy: none;
+}
+[data-sky="dawn"] {
+  --muted: #eef1ff; --link: #ffe3d8;
+  --sky-1: #86a5e3; --sky-2: #c3b6e6; --sky-3: #ffd0b8; --sky-4: #ffe9c4; --haze: rgba(255,236,196,.55);
+  --orb: #ff9d7a; --orb-halo: rgba(255,200,150,.7); --orb-top: 46.5em; --orb-size: 12em; --orb-marks: none;
+  --stars: 0; --cloud: #ffe6de; --cloud-far: .75; --cloud-near: .92;
+  --far-1: #b3b4e0; --far-2: #7f89c8;
+  --sea-1: #f1c6bf; --sea-2: #aab4e3; --sea-3: #7388cd;
+  --deep-1: #3f5aa8; --deep-2: #2c4896; --deep-3: #172e70;
+  --crest: rgba(255,255,255,.5); --glint: rgba(255,242,205,.9);
+  --iron: #223066; --iron-2: #1a2555; --iron-edge: #9aabe8;
+  --lamp: .45; --hero-text: #14204f; --hero-muted: #1c2a62; --gull: #2a3a78; --rays: .1; --buoy: none;
+}
+[data-sky="dusk"] {
+  --muted: #e0d6ee; --link: #ffa497;
+  --sky-1: #2a2a6e; --sky-2: #7d4288; --sky-3: #e8785f; --sky-4: #ffb56b; --haze: rgba(255,190,120,.45);
+  --orb: #fff0b8; --orb-halo: rgba(255,214,140,.6); --orb-top: 47.5em; --orb-size: 13em; --orb-marks: none;
+  --stars: .4; --cloud: #8a4a86; --cloud-far: .5; --cloud-near: .62;
+  --far-1: #9a5a8c; --far-2: #5a3578;
+  --sea-1: #d0707c; --sea-2: #8a4d86; --sea-3: #4a3274;
+  --deep-1: #2c2360; --deep-2: #171744; --deep-3: #0b0d2a;
+  --crest: rgba(255,214,170,.4); --glint: rgba(255,222,150,.9);
+  --iron: #1c1548; --iron-2: #140f38; --iron-edge: #8a66b8;
+  --lamp: .8; --hero-text: #fff; --hero-muted: #ecdcf2; --gull: #1c1548; --rays: .07; --buoy: brightness(.8);
+}
+
+/* Scene artwork. Shapes only: the colour comes from the element they mask (stars and the buoy are plain images). */
+:root {
+  --art-stars: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 600' fill='%23fff'%3E%3Ccircle cx='671' cy='547' r='1.1' opacity='0.54'/%3E%3Ccircle cx='156' cy='418' r='0.8' opacity='0.44'/%3E%3Ccircle cx='126' cy='507' r='0.9' opacity='0.33'/%3E%3Ccircle cx='896' cy='120' r='1.1' opacity='0.5'/%3E%3Ccircle cx='877' cy='8' r='1.6' opacity='0.51'/%3E%3Ccircle cx='465' cy='255' r='1.3' opacity='0.92'/%3E%3Ccircle cx='1189' cy='223' r='0.8' opacity='0.94'/%3E%3Ccircle cx='103' cy='203' r='0.9' opacity='0.59'/%3E%3Ccircle cx='303' cy='192' r='1.6' opacity='0.6'/%3E%3Ccircle cx='1404' cy='29' r='1.6' opacity='0.74'/%3E%3Ccircle cx='392' cy='97' r='1.6' opacity='0.81'/%3E%3Ccircle cx='1163' cy='8' r='1.1' opacity='0.7'/%3E%3Ccircle cx='1096' cy='125' r='1.3' opacity='0.68'/%3E%3Ccircle cx='936' cy='92' r='1.1' opacity='0.85'/%3E%3Ccircle cx='1439' cy='380' r='0.8' opacity='0.52'/%3E%3Ccircle cx='1083' cy='163' r='1.3' opacity='0.81'/%3E%3Ccircle cx='597' cy='239' r='0.8' opacity='0.51'/%3E%3Ccircle cx='864' cy='25' r='1.3' opacity='0.53'/%3E%3Ccircle cx='1009' cy='122' r='1.8' opacity='0.49'/%3E%3Ccircle cx='1150' cy='214' r='1.0' opacity='0.62'/%3E%3Ccircle cx='725' cy='229' r='1.3' opacity='0.85'/%3E%3Ccircle cx='148' cy='436' r='1.0' opacity='0.48'/%3E%3Ccircle cx='1368' cy='9' r='1.8' opacity='0.8'/%3E%3Ccircle cx='1333' cy='217' r='1.4' opacity='0.86'/%3E%3Ccircle cx='590' cy='324' r='1.4' opacity='0.44'/%3E%3Ccircle cx='953' cy='90' r='1.6' opacity='0.51'/%3E%3Ccircle cx='128' cy='39' r='1.3' opacity='0.51'/%3E%3Ccircle cx='515' cy='110' r='1.4' opacity='0.49'/%3E%3Ccircle cx='927' cy='112' r='1.3' opacity='0.89'/%3E%3Ccircle cx='889' cy='460' r='1.0' opacity='0.56'/%3E%3Ccircle cx='742' cy='296' r='1.1' opacity='0.93'/%3E%3Ccircle cx='317' cy='11' r='1.1' opacity='0.57'/%3E%3Ccircle cx='485' cy='6' r='1.6' opacity='0.54'/%3E%3Ccircle cx='585' cy='6' r='1.4' opacity='0.72'/%3E%3Ccircle cx='1256' cy='209' r='0.9' opacity='0.8'/%3E%3Ccircle cx='1063' cy='550' r='1.4' opacity='0.55'/%3E%3Ccircle cx='118' cy='141' r='1.8' opacity='0.85'/%3E%3Ccircle cx='811' cy='110' r='1.4' opacity='0.5'/%3E%3Ccircle cx='1307' cy='111' r='1.1' opacity='0.48'/%3E%3Ccircle cx='435' cy='132' r='1.0' opacity='0.62'/%3E%3Ccircle cx='115' cy='13' r='1.6' opacity='0.53'/%3E%3Ccircle cx='215' cy='549' r='1.3' opacity='0.32'/%3E%3Ccircle cx='433' cy='243' r='0.9' opacity='0.77'/%3E%3Ccircle cx='719' cy='234' r='1.1' opacity='0.51'/%3E%3Ccircle cx='1007' cy='598' r='1.1' opacity='0.48'/%3E%3Ccircle cx='646' cy='11' r='1.0' opacity='0.82'/%3E%3C/svg%3E"); --art-clouds: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2400 300'%3E%3Cdefs%3E%3Cg id='a'%3E%3Crect y='52' width='260' height='46' rx='23'/%3E%3Ccircle cx='84' cy='56' r='40'/%3E%3Ccircle cx='150' cy='46' r='48'/%3E%3Ccircle cx='204' cy='62' r='32'/%3E%3C/g%3E%3Cg id='b'%3E%3Crect y='36' width='156' height='30' rx='15'/%3E%3Ccircle cx='52' cy='36' r='24'/%3E%3Ccircle cx='94' cy='30' r='30'/%3E%3C/g%3E%3Cg id='c'%3E%3Crect y='40' width='340' height='30' rx='15'/%3E%3Crect x='70' y='16' width='190' height='40' rx='20'/%3E%3Ccircle cx='214' cy='28' r='28'/%3E%3C/g%3E%3C/defs%3E%3Cuse href='%23a' x='60' y='170'/%3E%3Cuse href='%23b' x='470' y='50'/%3E%3Cuse href='%23c' x='820' y='200'/%3E%3Cuse href='%23b' transform='translate(1300 110) scale(1.35)'/%3E%3Cuse href='%23a' transform='translate(1700 30) scale(.8)'/%3E%3Cuse href='%23b' x='2140' y='210'/%3E%3Cuse href='%23c' transform='translate(1010 24) scale(.6)'/%3E%3C/svg%3E"); --art-skyline: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2400 130'%3E%3Cpath d='M0 130V112Q150 88 330 110T700 114T1100 106T1500 114T1900 102T2400 112V130Z'/%3E%3Cpath d='M140 130V86l20-14v14l20-14v14l20-14v14l20-14v14l20-14v14l20-14v58z'/%3E%3Cpath d='M300 130V82a12 12 0 0 1 24 0v48zM328 130V82a12 12 0 0 1 24 0v48zM356 130V82a12 12 0 0 1 24 0v48z'/%3E%3Cpath d='M606 130l6-78h16l6 78zM604 47h32v6h-32zM613 33h14v14h-14zM610 33l10-11 10 11z'/%3E%3Cpath d='M760 130V98h46V84h34v20h60V90h28V76h22v24h70v-8h40v38z'/%3E%3Cpath d='M1166 130V88l10-36 10 36v12h64v30z'/%3E%3Cpath d='M1330 130v-26a40 40 0 0 1 80 0v26z'/%3E%3Cpath d='M1500 130V92a37.5 22 0 0 1 75 0a37.5 22 0 0 1 75 0v38z'/%3E%3Cpath d='M1700 130V56h10v74zM1722 130V70h8v60z'/%3E%3Cpath d='M1790 130V96h60V84h30v16h90v-10h56v40z'/%3E%3Cpath d='M2102 130l7-92h4l7 92z'/%3E%3Ccircle cx='2200' cy='114' r='26'/%3E%3Ccircle cx='2242' cy='106' r='30'/%3E%3Ccircle cx='2288' cy='114' r='24'/%3E%3C/svg%3E"); --art-cranes: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2400 260'%3E%3Cdefs%3E%3Cg id='k' fill='none' stroke='%23000' stroke-linecap='round'%3E%3Cpath stroke-width='7' d='M0 80H200M50 92H130'/%3E%3Cpath stroke-width='5' d='M62 220V92M118 220V92M62 180L118 130M118 180L62 130'/%3E%3Cpath stroke-width='3' d='M90 18L62 90M90 18L118 90M90 18L8 78M90 18L192 78M162 80V118'/%3E%3Crect x='150' y='118' width='24' height='8' fill='%23000' stroke='none'/%3E%3C/g%3E%3C/defs%3E%3Cuse href='%23k' transform='translate(120 95) scale(0.75)'/%3E%3Cuse href='%23k' transform='translate(520 40) scale(1)'/%3E%3Cuse href='%23k' transform='translate(900 84) scale(0.8)'/%3E%3Cuse href='%23k' transform='translate(1400 18) scale(1.1)'/%3E%3Cuse href='%23k' transform='translate(1900 62) scale(0.9)'/%3E%3Cpath d='M40 234h70v26H40zM110 246h50v14h-50zM330 240h90v20h-90zM760 232h60v28h-60zM820 244h44v16h-44zM1150 238h110v22h-110zM1260 248h40v12h-40zM1660 230h80v30h-80zM1740 242h60v18h-60zM2150 236h100v24h-100z'/%3E%3C/svg%3E");
+  --art-pier: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 450' preserveAspectRatio='none'%3E%3Cpath d='M0 14L50 54 100 14 150 54 200 14 250 54 300 14 350 54 400 14 450 54 500 14 550 54 600 14' fill='none' stroke='%23000' stroke-width='5' stroke-linejoin='round'/%3E%3Cpath d='M93 60h14v390H93zM287 60h26v390h-26zM493 60h14v390h-14zM282 60h36v9h-36zM89 60h22v7H89zM489 60h22v7h-22z'/%3E%3C/svg%3E"); --art-wave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 30' preserveAspectRatio='none'%3E%3Cpath d='M0 14Q50 0 100 14T200 14V30H0Z'/%3E%3C/svg%3E"); --art-crest: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 30' preserveAspectRatio='none'%3E%3Cpath d='M-100 14Q-50 28 0 14T100 14T200 14T300 14' fill='none' stroke='%23000' stroke-width='2.6'/%3E%3C/svg%3E"); --art-ripples: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 120' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M30 18h70M230 18h70M430 18h70M630 18h70M110 40h110M510 40h110M60 66h40M260 66h40M460 66h40M660 66h40M150 96h150M550 96h150'/%3E%3C/svg%3E");
+  --art-buoy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1400 120'%3E%3Cg transform='translate(700 0)'%3E%3Cpath d='M22 66L35 30 48 66M27 52h16' fill='none' stroke='%230c1838' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='35' cy='24' r='6.5' fill='%23ffcb6b'/%3E%3Cpath d='M12 120L19 64h32l7 56z' fill='%23ff8a7a'/%3E%3Cpath d='M16.2 86h37.6l1.5 12H14.7z' fill='%23fff' opacity='.92'/%3E%3C/g%3E%3C/svg%3E"); --art-gull: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 12' preserveAspectRatio='none'%3E%3Cpath d='M2 9.5Q7 1.5 14 7.5Q21 1.5 26 9.5' fill='none' stroke='%23000' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --art-glitter-far: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 220' preserveAspectRatio='none'%3E%3Cpath d='M128 6h12M148 28h10M118 47h19M93 70h24M108 70h22M87 70h20M166 91h16M99 110h35M172 110h29M69 110h24M99 129h39M118 129h34M93 129h24M133 153h47M117 170h50M178 170h30M141 193h35M24 193h34M184 215h49' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E"); --art-glitter-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 220' preserveAspectRatio='none'%3E%3Cpath d='M122 7h12M124 18h14M106 30h16M80 40h21M129 55h23M70 63h19M129 77h22M138 86h25M184 86h21M81 101h24M61 109h21M41 121h39M95 132h39M45 143h29M151 143h41M111 154h24M58 154h38M94 167h32M187 167h27M53 181h28M122 181h44M173 188h29M25 188h32M140 200h32M180 200h40M210 212h28M42 212h37M40 212h58' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E"); --art-glitter-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 220' preserveAspectRatio='none'%3E%3Cpath d='M110 7h11M160 18h12M110 28h14M114 43h16M115 54h16M96 64h20M165 64h25M126 76h27M133 76h22M157 88h30M72 98h28M88 98h25M142 110h32M175 110h34M100 120h29M106 120h29M143 132h41M114 145h38M169 145h19M162 154h23M62 154h21M133 154h44M181 167h36M188 167h29M74 180h41M126 191h39M85 200h40M135 200h52M81 200h29M187 213h55' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E");
+  --art-fish: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 220'%3E%3Cdefs%3E%3Cg id='f'%3E%3Cpath d='M0-9L15 0 0 9zM10 0Q34-15 58 0 34 15 10 0z'/%3E%3C/g%3E%3C/defs%3E%3Cuse href='%23f' transform='translate(30 44) scale(1)'/%3E%3Cuse href='%23f' transform='translate(126 22) scale(0.8)'/%3E%3Cuse href='%23f' transform='translate(150 96) scale(1.1)'/%3E%3Cuse href='%23f' transform='translate(262 54) scale(0.9)'/%3E%3Cuse href='%23f' transform='translate(304 146) scale(1)'/%3E%3Cuse href='%23f' transform='translate(404 96) scale(0.8)'/%3E%3Cuse href='%23f' transform='translate(436 176) scale(0.7)'/%3E%3Cuse href='%23f' transform='translate(222 188) scale(0.85)'/%3E%3C/svg%3E"); --art-whale: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 400'%3E%3Cpath d='M48 215C60 170 110 135 200 120C300 104 420 108 540 132C650 154 760 186 850 200C890 180 930 150 962 118C952 160 935 190 920 206C940 222 958 255 966 292C925 262 885 236 850 222C770 244 660 282 520 300C400 314 260 318 160 292C100 276 60 250 48 215Z'/%3E%3Cpath d='M300 296C330 340 380 372 432 382C410 350 392 320 384 298Z'/%3E%3Cpath d='M636 152C660 128 684 120 696 122C694 140 696 156 702 168Z'/%3E%3C/svg%3E"); --art-seabed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2400 240'%3E%3Cpath d='M0 240V150Q200 112 420 140T900 150T1400 122T1900 150T2400 150V240Z'/%3E%3Cellipse cx='640' cy='150' rx='70' ry='30'/%3E%3Cellipse cx='716' cy='156' rx='40' ry='20'/%3E%3Cellipse cx='2060' cy='150' rx='90' ry='34'/%3E%3Cg fill='none' stroke='%23000' stroke-width='9' stroke-linecap='round'%3E%3Cpath d='M250 140q-22-28 0-56t0-56M286 136q20-24 0-48t0-40M214 142q18-20 2-40'/%3E%3Cpath d='M1120 124q-22-28 0-56t0-56M1156 122q20-24 0-48M1088 128q-16-22 0-44t0-36'/%3E%3Cpath d='M2290 150q-22-28 0-56t0-50M2326 150q20-24 0-48'/%3E%3Cg transform='rotate(-18 1700 120)'%3E%3Cpath d='M1700 44v118M1672 70h56M1640 118q6 52 60 52t60-52M1632 132l8-22 18 16zM1768 132l-8-22-18 16z'/%3E%3Ccircle cx='1700' cy='30' r='13'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
 * { box-sizing: border-box; }
-body { margin: 0; min-height: 100vh; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-       background: var(--bg); color: var(--text); }
-a { color: var(--accent); }
-a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+/* The canvas shows above the sky when the page is pulled down, so it takes the sky's colour. */
+html { background: var(--sky-1); }
+body { margin: 0; min-height: 100vh; display: flex; flex-direction: column;
+       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--deep-2); color: var(--text); }
+a { color: var(--link); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
 
-/* ---- Hero: sky + harbour scene ---- */
-.hero { --hero-h: clamp(520px, 68vh, 760px);
-        --scene-h: calc(var(--hero-h) * 0.8);
-        --step: clamp(300px, 34vw, 620px);   /* distance between two berths on the pier */
-        --stations: 3;                        /* number of the last berth; raise it when an app is added */
-        --pad: 48px;                          /* spare scene on both sides for the pointer shift */
-        --cam: 0; --scroll: 0; --pointer: 0;
-        position: relative; height: var(--hero-h); overflow: hidden; contain: layout paint;
-        background: radial-gradient(ellipse 50% 28% at 50% 88%, rgba(255,138,122,0.16), transparent),
-                    linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-horizon) 82%); }
-@supports (height: 1svh) { .hero { --hero-h: clamp(520px, 68svh, 760px); } }
+/* ---- Hero: the harbour scene ----
+   1em inside the hero is one hundredth of its height, and everything in the scene is measured in em,
+   so the pier, the lamps and the signs always scale together. A wider window only shows more of the pier. */
+.hero { --hero-h: clamp(540px, 84vh, 900px);
+        --step: 60em;                 /* distance between two berths: one section of the pier */
+        --pad: 14em;                  /* spare scene on both sides for the pointer shift */
+        --cam: 0;
+        --u: calc(var(--hero-h) / 100);   /* the same unit as a length, for the text sizes below */
+        position: relative; height: var(--hero-h); font-size: var(--u);
+        overflow: hidden; contain: layout paint; color: var(--hero-text);
+        background: radial-gradient(ellipse 46% 26% at calc(var(--orb-x) * 100%) 64%, var(--haze), transparent),
+                    linear-gradient(var(--sky-1) 0%, var(--sky-2) 32%, var(--sky-3) 56%, var(--sky-4) 64%); }
+@supports (height: 1svh) { .hero { --hero-h: clamp(540px, 84svh, 900px); } }
 
-.hero-text { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 56px 20px 0;
-             transform: translate3d(0, calc(var(--scroll) * 0.3px), 0); }
-h1 { font-size: clamp(48px, 8vw, 88px); line-height: 1; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 12px; }
-.lead { color: var(--muted); font-size: 20px; line-height: 1.4; margin: 0; max-width: 34ch; }
-.crumb { color: var(--muted); font-size: 16px; margin: 0 0 20px; }
-
-/* A layer is a strip wider than the hero, tiled with one SVG.
-   --cam (berth number, set inline and by dock.js) slides it sideways: every layer travels its own
-   distance per berth (--f), which is what gives the depth. --scroll and --pointer come from dock.js. */
+/* A layer is a strip wider than the hero. Three things move it, each through its own property so that none of
+   them needs the page to be restyled while it runs:
+   - --cam (berth number, set inline and by dock.js) slides it sideways with a transition on translate; every
+     layer travels its own distance per berth (--f), which is what gives the depth;
+   - the scroll position moves it down by --depth of the distance scrolled, with a scroll-driven animation on
+     transform (dock.js does the same by hand where the browser has no scroll-driven animations);
+   - the pointer shifts .shift, the layer's only child, by up to --reach (dock.js).
+   Everything a layer shows is painted by its .shift or lives inside it. */
 .layer { --pan: calc(var(--step) * var(--f));
          --station0: calc(var(--pad) + (100% - var(--pad) * 2 - var(--pan) * var(--stations)) / 2);
-         position: absolute; bottom: 0; left: calc(var(--pad) * -1); height: var(--scene-h);
+         position: absolute; left: calc(var(--pad) * -1);
          width: calc(100% + var(--pad) * 2 + var(--pan) * var(--stations));
-         font-size: calc(var(--scene-h) / 70);   /* 1em = 10 units of the 700-unit-high tiles */
-         /* The tile starts 300px left of the hero whatever --pad is, so the pattern sits the same on every device. */
-         background-repeat: repeat-x; background-position: calc(var(--pad) - 300px) bottom, 0 0; background-size: auto 100%;
          pointer-events: none; will-change: translate, transform;
          translate: calc(var(--cam) * var(--pan) * -1) 0;
-         transition: translate 1.4s cubic-bezier(0.65, 0, 0.2, 1);
-         transform: translate3d(calc(var(--pointer) * var(--shift) * -1px), calc(var(--scroll) * var(--depth) * 1px), 0); }
-/* Solid bands (shore, deck, water, quay) are gradients, not part of the tiles, so tile edges never show. */
-.layer--sky   { --f: 0.05; --depth: 0.50; --shift: 4;  background-image: url(scene/sky.svg); }
-.layer--far   { --f: 0.28; --depth: 0.34; --shift: 9;
-                background-image: url(scene/far.svg), linear-gradient(transparent 78.4%, var(--far) 78.4%);
-                background-repeat: repeat-x, no-repeat; background-size: auto 100%, 100% 100%; }
-.layer--dock  { --f: 1;    --depth: 0.18; --shift: 18;
-                background-image: url(scene/dock.svg),
-                  linear-gradient(transparent 64.57%, var(--iron-edge) 64.57% 64.86%, var(--iron) 64.86% 66.57%,
-                                  transparent 66.57% 72%, var(--iron) 72% 72.86%, transparent 72.86%);
-                background-repeat: repeat-x, no-repeat; background-size: auto 100%, 100% 100%; }
-.layer--water { --f: 1.12; --depth: 0.08; --shift: 26;
-                background-image: url(scene/water.svg),
-                  linear-gradient(transparent 80%, rgba(255,255,255,0.14) 80% 80.2%, #16306a 80.2%, #0b1a40);
-                background-repeat: repeat-x, no-repeat; background-size: auto 100%, 100% 100%; }
-/* The quay rises faster than the page scrolls; the shadow keeps the gap under it filled. */
-.layer--quay  { --f: 1.5;  --depth: -0.12; --shift: 40;
-                background-image: url(scene/quay.svg),
-                  linear-gradient(transparent 93.14%, rgba(255,255,255,0.08) 93.14% 93.43%, var(--bg) 93.43%);
-                background-repeat: repeat-x, no-repeat; background-size: auto 100%, 100% 100%;
-                box-shadow: 0 200px 0 var(--bg); }
+         transition: translate var(--travel, 1.4s) cubic-bezier(0.65, 0, 0.2, 1); }
+.shift { position: absolute; inset: 0; will-change: transform; }
 
 /* Swiping on a touch screen (dock.js): the scene follows the finger, then settles on the nearest berth. */
-.hero, .berths { touch-action: pan-y; }
+.hero { touch-action: pan-y; }
 .hero.is-dragging { -webkit-user-select: none; user-select: none; }
 .hero.is-dragging .layer { transition: none; }
 .hero.is-settling .layer { transition-duration: 0.45s; transition-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
 
+/* ---- Sky ---- */
+.layer--stars { top: 0; height: 60em; --f: 0.02; --depth: 0.62; --reach: 0.5em; opacity: var(--stars); }
+.layer--stars > .shift { background: var(--art-stars) 0 0 / 160em 60em repeat-x; }
+.layer--stars > .shift::after { content: ""; position: absolute; inset: 0; background: var(--art-stars) 67em 3em / 208em 78em repeat-x; }
+[data-sky="day"] .layer--stars, [data-sky="dawn"] .layer--stars { display: none; }
+
+/* The sun or the moon. It is a button: a click moves on to the next time of day. */
+.layer--orb { top: 0; height: 70em; --f: 0; --depth: 0.58; --reach: 0.8em; }
+.orb { position: absolute; left: calc(var(--pad) + (100% - var(--pad) * 2) * var(--orb-x)); top: var(--orb-top);
+       width: var(--orb-size); height: var(--orb-size); translate: -50% -50%; padding: 0; border: 0; border-radius: 50%;
+       font: inherit;   /* a button has its own font size; the scene's em is needed here */
+       background: var(--orb-marks), var(--orb); cursor: pointer; pointer-events: auto; transition: scale 0.3s; }
+.orb::before { content: ""; position: absolute; inset: -120%; border-radius: 50%; pointer-events: none;
+               background: radial-gradient(closest-side, var(--orb-halo), transparent); }
+.orb:hover { scale: 1.08; }
+/* On a narrow screen the title takes the whole width, so the sun or moon sits below it, on the open side. */
+@media (max-width: 640px) {
+  :root { --orb-x: .2; }
+  .orb { top: max(var(--orb-top), 44.5em); }
+}
+
+.layer--clouds-far  { top: 5em;  height: 21em; --f: 0.05; --depth: 0.55; --reach: 1em;   opacity: var(--cloud-far); }
+.layer--clouds-near { top: 13em; height: 30em; --f: 0.1;  --depth: 0.48; --reach: 1.6em; opacity: var(--cloud-near); }
+/* .drift (clouds) and .flow (waves) are one tile wider than their layer and slide by exactly one tile, forever. */
+.drift, .flow { position: absolute; inset: 0 calc(var(--period) * -1) 0 0; }
+.drift { background: var(--cloud); }
+.layer--clouds-far .drift  { --period: 168em; --t: 260s; -webkit-mask: var(--art-clouds) 0 0 / 168em 21em repeat-x; mask: var(--art-clouds) 0 0 / 168em 21em repeat-x; }
+.layer--clouds-near .drift { --period: 240em; --t: 170s; -webkit-mask: var(--art-clouds) 90em 0 / 240em 30em repeat-x; mask: var(--art-clouds) 90em 0 / 240em 30em repeat-x; }
+
+/* Seagulls cross the sky by day; --y, --s (size), --t (crossing time), --d (delay) and --w (wingbeat) are set inline. */
+.layer--gulls { top: 0; height: 60em; --f: 0; --depth: 0.3; --reach: 4em; }
+.gull { position: absolute; left: var(--x); top: var(--y); width: calc(4.4em * var(--s)); height: calc(1.9em * var(--s));
+        background: var(--gull); -webkit-mask: var(--art-gull) 0 0 / 100% 100% no-repeat; mask: var(--art-gull) 0 0 / 100% 100% no-repeat; transform-origin: 50% 78%; }
+:root:not([data-sky]) .gull, [data-sky="night"] .gull { display: none; }
+
+/* ---- Far shore ---- */
+.layer--skyline { top: 49.6em; height: 13em; --f: 0.16; --depth: 0.42; --reach: 2em; }
+.layer--skyline > .shift { background: var(--far-1);
+                           background: linear-gradient(var(--far-1) 30%, color-mix(in srgb, var(--far-1) 60%, var(--sky-4)));
+                           -webkit-mask: var(--art-skyline) 0 0 / 240em 13em repeat-x; mask: var(--art-skyline) 0 0 / 240em 13em repeat-x; }
+.layer--cranes { top: 36.6em; height: 29em; --f: 0.32; --depth: 0.34; --reach: 3.2em; }
+.layer--cranes > .shift { background: var(--far-2);
+                          background: linear-gradient(var(--far-2) 60%, color-mix(in srgb, var(--far-2) 82%, var(--sky-4)));
+                          -webkit-mask: var(--art-cranes) 0 0 / 240em 26em repeat-x,
+                                linear-gradient(#000, #000) 0 100% / 100% 3.1em no-repeat; mask: var(--art-cranes) 0 0 / 240em 26em repeat-x,
+                                linear-gradient(#000, #000) 0 100% / 100% 3.1em no-repeat; }
+
+/* ---- Water: three rows of waves, each nearer, darker and faster than the one behind it ---- */
+.flow { --wave: calc(var(--period) / var(--n));   /* a row slides by --period; one wave is 1/--n of that */
+        background: linear-gradient(var(--c1), var(--c2));
+        -webkit-mask: var(--art-wave) 0 0 / var(--wave) var(--ph) repeat-x,
+              linear-gradient(#000, #000) 0 100% / 100% calc(100% - var(--ph) + 1px) no-repeat; mask: var(--art-wave) 0 0 / var(--wave) var(--ph) repeat-x,
+              linear-gradient(#000, #000) 0 100% / 100% calc(100% - var(--ph) + 1px) no-repeat; }
+.flow::before { content: ""; position: absolute; inset: calc(var(--ph) * 1.2) 0 0; background: var(--crest);
+                -webkit-mask: var(--art-ripples) 0 0 / var(--period) calc(var(--period) * 0.3) repeat; mask: var(--art-ripples) 0 0 / var(--period) calc(var(--period) * 0.3) repeat; }
+.flow::after { content: ""; position: absolute; inset: 0; background: var(--crest);
+               -webkit-mask: var(--art-crest) 0 calc(var(--ph) * 0.16) / var(--wave) var(--ph) repeat-x; mask: var(--art-crest) 0 calc(var(--ph) * 0.16) / var(--wave) var(--ph) repeat-x; }
+.layer--swell { top: 63.4em; height: 15em; --f: 0.6;  --depth: 0.22; --reach: 5em; }
+/* The middle row moves with the pier, so the reflections stay under their lamps. */
+.layer--water { top: 73.6em; height: 17em; --f: 1;    --depth: 0.16; --reach: 7em; }
+.layer--surf  { top: 84em;   height: 16em; --f: 1.5;  --depth: -0.12; --reach: 13em; }
+.layer--swell .flow { --period: 48em; --n: 3; --ph: 2.2em; --t: 44s; --c1: var(--sea-1); --c2: var(--sea-2); }
+.layer--water .flow { --period: 48em; --n: 2; --ph: 3em;   --t: 22s; --c1: var(--sea-2); --c2: var(--sea-3); }
+.layer--surf .flow  { --period: 80em; --n: 2; --ph: 4.4em; --t: 17s; --c1: var(--sea-3); --c2: var(--deep-1); }
+/* The nearest row rises faster than the page scrolls; this keeps the gap under it filled. */
+.layer--surf > .shift::after { content: ""; position: absolute; left: 0; right: 0; top: 99%; height: 30em; background: var(--deep-1); }
+/* Buoys float behind the nearest wave. */
+.layer--surf > .shift::before { content: ""; position: absolute; left: 0; right: 0; top: -8.4em; height: 12em;
+                       background: var(--art-buoy) -8em 0 / 140em 12em repeat-x; filter: var(--buoy); }
+
+/* The path of light under the sun or the moon: one piece behind the pier, one in front of it. */
+.layer--glitter { top: 64.2em; height: 34em; --f: 0; --depth: 0.14; --reach: 1.2em; }
+.glitter { position: absolute; left: calc(var(--pad) + (100% - var(--pad) * 2) * var(--orb-x)); translate: -50% 0;
+           background: var(--glint); }
+.glitter--far { top: 0.5em; width: 10em; height: 9.4em; -webkit-mask: var(--art-glitter-far) 0 0 / 100% 100% no-repeat; mask: var(--art-glitter-far) 0 0 / 100% 100% no-repeat; }
+.glitter--near { top: 10.4em; width: 32em; height: 23em; -webkit-mask: var(--art-glitter-a) 0 0 / 100% 100% no-repeat; mask: var(--art-glitter-a) 0 0 / 100% 100% no-repeat; }
+.glitter--alt { -webkit-mask: var(--art-glitter-b) 0 0 / 100% 100% no-repeat; mask: var(--art-glitter-b) 0 0 / 100% 100% no-repeat; }
+
+/* ---- The pier ----
+   Deck, rails and beams are bands drawn across the whole layer. Truss and pilings come in sections one
+   berth wide: each mark carries its own section, so a lamp always stands over the middle piling. */
+.layer--dock { top: 51em; height: 49em; --f: 1; --depth: 0.16; --reach: 7em; }
+.layer--dock > .shift {
+  background:
+    radial-gradient(circle, var(--iron-edge) 0.13em, transparent 0.15em) 0 4.6em / 2em 0.5em repeat-x,   /* rivets */
+    linear-gradient(var(--iron-edge), var(--iron-edge)) 0 4em / 100% 0.3em no-repeat,                     /* deck edge */
+    linear-gradient(var(--iron), var(--iron)) 0 4.3em / 100% 1.1em no-repeat,                             /* deck */
+    linear-gradient(var(--iron), var(--iron)) 0 9.2em / 100% 0.8em no-repeat,                             /* lower chord */
+    linear-gradient(var(--iron-2), var(--iron-2)) 0 13.4em / 100% 0.6em no-repeat,                        /* waling */
+    linear-gradient(var(--iron), var(--iron)) 0 0.6em / 100% 0.32em no-repeat,                            /* handrail */
+    linear-gradient(var(--iron), var(--iron)) 0 2.3em / 100% 0.2em no-repeat,                             /* mid rail */
+    repeating-linear-gradient(90deg, var(--iron) 0 0.32em, transparent 0.32em 6em) 0 0.6em / 100% 3.4em no-repeat; }
+.layer--dock > .shift::before, .layer--dock > .shift::after, .mark::before {
+  content: ""; position: absolute; top: 4em; height: 45em; pointer-events: none;
+  background: linear-gradient(var(--iron), var(--iron-2) 40%); }
+/* The pier before the first berth and after the last one. */
+.layer--dock > .shift::before { left: 0; width: calc(var(--station0) - var(--step) / 2);
+                       -webkit-mask: var(--art-pier) 100% 0 / var(--step) 100% repeat-x; mask: var(--art-pier) 100% 0 / var(--step) 100% repeat-x; }
+.layer--dock > .shift::after { left: calc(var(--station0) + (var(--stations) + 0.5) * var(--step)); right: 0;
+                      -webkit-mask: var(--art-pier) 0 0 / var(--step) 100% repeat-x; mask: var(--art-pier) 0 0 / var(--step) 100% repeat-x; }
+
 /* Berth marks stand on the deck, reflections lie on the water; --n is the berth number. */
 .mark, .reflection { position: absolute; left: calc(var(--station0) + var(--n) * var(--pan)); }
-.mark { bottom: 35.43%; }
+.mark { top: 4em; }
+.mark::before { top: 0; left: calc(var(--step) / -2); width: var(--step); -webkit-mask: var(--art-pier) 0 0 / 100% 100% no-repeat; mask: var(--art-pier) 0 0 / 100% 100% no-repeat; }
 /* An app's lamp and sign are a link to its berth (same targets as the cards below the scene). */
 a.mark { display: block; color: inherit; text-decoration: none; pointer-events: auto; cursor: pointer; }
-a.mark:hover .plate { border-color: var(--berth); translate: 0 -0.25em; }
-.lamp { position: absolute; left: -0.25em; bottom: 0; width: 0.5em; height: 12em; background: var(--iron); }
-.lamp::before { content: ""; position: absolute; left: 50%; top: 0; width: 1.8em; height: 1.8em;
-                translate: -50% -50%; border-radius: 50%; background: var(--berth); }
+.lamp { position: absolute; left: -0.3em; bottom: 0; width: 0.6em; height: 15em; background: var(--iron); border-radius: 0.3em 0.3em 0 0; }
+.lamp::before { content: ""; position: absolute; left: 50%; top: 0; width: 2.2em; height: 2.2em;
+                translate: -50% -50%; border-radius: 50%; background: var(--berth); box-shadow: 0 0 0 0.25em var(--iron); }
 /* The glow only animates opacity and has no mask, so it never needs repainting while it pulses. */
-.lamp::after { content: ""; position: absolute; left: 50%; top: 0; width: 28em; height: 28em;
-               translate: -50% -50%; opacity: 0.55; pointer-events: none;
+.lamp::after { content: ""; position: absolute; left: 50%; top: 0; width: 32em; height: 32em;
+               translate: -50% -50%; opacity: calc(0.55 * var(--lamp)); pointer-events: none;
                background: radial-gradient(closest-side, var(--berth), transparent);
                background: radial-gradient(closest-side, var(--berth), color-mix(in srgb, var(--berth) 45%, transparent) 30%,
-                                           color-mix(in srgb, var(--berth) 12%, transparent) 65%, transparent);
-               animation: beacon 5s ease-in-out infinite; }
-.hero.is-offscreen .lamp::after { animation-play-state: paused; }
-.lamp--pulse::after { animation: heartbeat 1.2s ease-out infinite; }
-.mark--home .lamp { height: 19em; width: 0.7em; left: -0.35em; }
-.plate { position: absolute; left: 3.2em; bottom: 4.6em; width: 8.6em; padding: 0.5em 0 0.6em;
-         font-size: 1.3em; line-height: 1.1; text-align: center; color: var(--muted);
-         background: var(--iron); border: 0.15em solid var(--iron-edge); border-radius: 0.6em;
+                                           color-mix(in srgb, var(--berth) 12%, transparent) 65%, transparent); }
+.mark--home .lamp { height: 19em; width: 0.8em; left: -0.4em; }
+.mark--home .lamp::before { width: 2.8em; height: 2.8em; }
+.plate { position: absolute; left: 1.5em; bottom: 3em; width: max-content; min-width: 4.6em; max-width: 8.5em;
+         padding: 0.34em 0.75em 0.4em; font-size: 1.9em; line-height: 1.1; text-align: center; text-wrap: balance;
+         color: #c9d4f0;
+         background: var(--iron); border: 0.09em solid var(--iron-edge); border-radius: 0.36em;
          transition: translate 0.2s, border-color 0.2s; }
-.plate b { display: block; color: var(--text); font-size: 2.4em; font-weight: 800; }
-.plate::after { content: ""; position: absolute; left: 50%; top: 100%; width: 0.45em; height: 4.75em;
+.plate b { display: block; margin-top: 0.06em; color: #fff; font-size: 1.85em; font-weight: 800; font-variant-numeric: tabular-nums; }
+.plate::after { content: ""; position: absolute; left: 50%; top: 100%; width: 0.3em; height: 3.1em;
                 translate: -50% 0; background: var(--iron); }
-.reflection { top: 81.5%; width: 5em; height: 10em; translate: -50% 0; opacity: 0.45;
+a.mark:hover .plate, .mark.is-hot .plate { border-color: var(--berth); translate: 0 -0.25em; }
+a.mark:hover .lamp::after, .mark.is-hot .lamp::after { opacity: 0.9; animation: none; }
+.mark[aria-current="page"] .plate { border-color: var(--berth); }
+.mark[aria-current="page"] .plate b { color: var(--berth); }
+.reflection { top: 1.2em; width: 5em; height: 17em; translate: -50% 0; opacity: calc(0.16 + 0.34 * var(--lamp));
               background: repeating-linear-gradient(var(--berth) 0 0.35em, transparent 0.35em 1.7em);
-              -webkit-mask-image: radial-gradient(ellipse 50% 100% at 50% 0, #000 35%, transparent);
-              mask-image: radial-gradient(ellipse 50% 100% at 50% 0, #000 35%, transparent); }
-@keyframes beacon { 50% { opacity: 0.2; } }
+              -webkit-mask: radial-gradient(ellipse 50% 100% at 50% 0, #000 35%, transparent); mask: radial-gradient(ellipse 50% 100% at 50% 0, #000 35%, transparent); }
 
-/* Touch devices have no pointer shift, so the layers need no spare width, and where the browser can
-   tie an animation to the scroll position the scroll parallax runs off the main thread (dock.js then
-   leaves --scroll alone). Same movement as the transform above. */
-@media (hover: none) {
-  .hero { --pad: 0px; }
-  @supports (animation-timeline: scroll(root)) {
-    .layer, .hero-text { transform: none; animation: scroll-parallax linear both;
-                         animation-timeline: scroll(root); animation-range: 0px var(--hero-h); }
-    .hero-text { --depth: 0.3; }
-  }
-}
-@keyframes scroll-parallax { to { transform: translate3d(0, calc(var(--hero-h) * var(--depth)), 0); } }
-@keyframes heartbeat {
-  0%, 30%, 100% { opacity: 0.25; }
-  8% { opacity: 0.75; }
-  16% { opacity: 0.35; }
-  22% { opacity: 0.6; }
-}
+/* ---- Title ---- */
+/* The title scales with the hero too, so it always ends above the lamps and signs. */
+.hero-text { position: relative; z-index: 2; max-width: 1160px; margin: 0 auto; padding: calc(var(--u) * 6.4) 20px 0;
+             font-size: 16px; pointer-events: none; will-change: transform, opacity; }
+.hero-text a { color: inherit; pointer-events: auto; }
+h1 { font-size: clamp(40px, min(12vw, var(--u) * 12.6), 104px); line-height: 1; font-weight: 800; letter-spacing: -0.02em;
+     margin: 0 0 calc(var(--u) * 1.6); max-width: calc(100% - 76px);   /* a long name wraps before it reaches the flags */ }
+.lead { color: var(--hero-muted); font-size: clamp(16px, var(--u) * 2.9, 23px); line-height: 1.4; margin: 0; max-width: 44ch; }
+.crumb { font-size: clamp(14px, var(--u) * 2.1, 17px); margin: 0 0 calc(var(--u) * 2.2); }
 
-/* ---- Language switch: a signal mast. The flag of the page's language is hoisted to the top;
-        the whole mast is one link to the same page in the other language. ---- */
-.lang { position: absolute; z-index: 2; top: 44px; right: max(20px, calc(50% - 340px)); width: 62px; height: 88px;
-        color: var(--muted); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-decoration: none; }
-.lang::before { content: ""; position: absolute; left: 4px; top: 6px; bottom: 0; width: 3px; border-radius: 2px;
-                background: var(--iron-edge); }
-.lang::after { content: ""; position: absolute; left: 1px; top: 0; width: 9px; height: 9px; border-radius: 50%;
-               background: var(--iron-edge); }
-.flag { position: absolute; left: 7px; top: 12px; width: 52px; height: 26px; padding-right: 9px;
-        display: grid; place-items: center; background: rgba(255,255,255,0.14);
+/* ---- Language switch: two signal flags on a halyard that hangs from the top edge. The flag of the page's
+        language is hoisted; the whole line is one link to the same page in the other language. ---- */
+.lang { position: absolute; z-index: 3; top: 0; right: max(20px, calc(50% - 560px)); width: 64px; height: 132px;
+        color: var(--hero-muted); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-decoration: none;
+        transform-origin: 5px 0; }
+.lang::before { content: ""; position: absolute; left: 4px; top: 0; bottom: 8px; width: 2px; border-radius: 1px;
+                background: currentColor; opacity: 0.55; }
+.lang::after { content: ""; position: absolute; left: 1px; bottom: 0; width: 8px; height: 8px; border-radius: 50%;
+               background: currentColor; opacity: 0.7; }
+.flag { position: absolute; left: 6px; top: 50px; width: 54px; height: 27px; padding-right: 9px;
+        display: grid; place-items: center; background: rgba(255,255,255,.16);
+        background: color-mix(in srgb, currentColor 18%, transparent);
         clip-path: polygon(0 0, 100% 0, 80% 50%, 100% 100%, 0 100%);
         transition: translate 0.6s cubic-bezier(0.65, 0, 0.2, 1), background-color 0.6s, color 0.6s; }
-html:lang(en) .flag--en, html:lang(lt) .flag--lt { background: var(--accent); color: var(--iron); }
-html:lang(en) .flag--lt, html:lang(lt) .flag--en { translate: 0 32px; }
-.lang:hover .flag { background: rgba(255,255,255,0.3); }
+html:lang(en) .flag--en, html:lang(lt) .flag--lt { background: var(--accent); color: var(--ink); }
+html:lang(en) .flag--lt, html:lang(lt) .flag--en { translate: 0 33px; }
+.lang:hover .flag { background: color-mix(in srgb, currentColor 34%, transparent); }
 html:lang(en) .lang:hover .flag--en, html:lang(lt) .lang:hover .flag--lt { background: var(--accent); }
+/* On a narrow screen the flags sit beside the title, above the lead. */
+@media (max-width: 640px) {
+  .lang { height: 88px; }
+  .flag { top: 20px; width: 50px; height: 25px; }
+  html:lang(en) .flag--lt, html:lang(lt) .flag--en { translate: 0 30px; }
+}
 
-/* ---- Berth navigation ---- */
-.berths { max-width: 720px; margin: 0 auto; padding: 32px 20px 0; display: grid; gap: 16px; }
-.berth { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center;
-         background: var(--card); border-radius: 24px; padding: 24px; color: inherit; text-decoration: none; }
-.berth:hover { background: rgba(255,255,255,0.1); }
-.berth h2 { margin: 0 0 6px; font-size: 24px; }
-.berth p { margin: 0; color: var(--muted); line-height: 1.5; }
-.berth-plate { display: grid; justify-items: center; gap: 2px; min-width: 76px; padding: 10px 12px;
-               border: 2px solid rgba(255,255,255,0.16); border-radius: 12px; color: var(--muted); font-size: 13px; }
-.berth-plate b { color: var(--text); font-size: 28px; line-height: 1; font-weight: 800; }
-.berth-plate::before { content: ""; width: 8px; height: 8px; margin-bottom: 4px; border-radius: 50%;
-                       background: var(--berth); box-shadow: 0 0 12px var(--berth); }
-.berth[aria-current="page"] { background: rgba(255,255,255,0.1); box-shadow: inset 0 0 0 2px var(--berth); }
-/* On an app page the cards shrink to a row of plates, so the app's own text comes right after. */
-body:not([data-berth="0"]) .berths { grid-template-columns: repeat(3, 1fr); gap: 12px; }
-body:not([data-berth="0"]) .berth { grid-template-columns: 1fr; justify-items: center; gap: 10px;
-                                    padding: 14px 8px; border-radius: 18px; text-align: center; }
-body:not([data-berth="0"]) .berth h2 { margin: 0; font-size: 16px; }
+/* Stops and starts everything that moves on its own (waves, clouds, gulls, lamps). */
+.pause { display: none; position: absolute; z-index: 3; right: max(20px, calc(50% - 560px)); bottom: 18px; width: 36px; height: 36px; padding: 0;
+         border: 1px solid rgba(255,255,255,.4); border-radius: 50%; background: rgba(8,19,48,.35); color: #fff;
+         cursor: pointer; opacity: 0.6; transition: opacity 0.2s; }
+.js .pause { display: block; }   /* dock.js sets .js: the button does nothing without it */
+.pause:hover, .pause:focus-visible { opacity: 1; }
+.pause::before { content: ""; position: absolute; inset: 11px 12px; border: solid currentColor; border-width: 0 4px; }
+.is-paused .pause::before { inset: 10px 10px 10px 13px; border: 0; background: currentColor; clip-path: polygon(0 0, 100% 50%, 0 100%); }
+
+/* ---- Below the scene: the water under the dock. It gets darker with depth. ---- */
+.depths { position: relative; isolation: isolate; overflow: hidden; overflow: clip; flex: 1; display: flex; flex-direction: column;
+          background: linear-gradient(var(--deep-1), var(--deep-2) min(70vh, 640px), var(--deep-3) max(170vh, 1500px)); }
+/* Shafts of light coming down from the surface. */
+.depths::before { content: ""; position: absolute; z-index: -1; inset: 0 -10vw auto; height: min(95vh, 820px);
+                  opacity: var(--rays); pointer-events: none;
+                  background: repeating-linear-gradient(104deg, transparent 0, #fff 5vw, transparent 10vw 16vw,
+                                                        #fff 18.5vw, transparent 21vw 33vw);
+                  -webkit-mask: linear-gradient(#000, transparent); mask: linear-gradient(#000, transparent); }
+/* A whale passes far below. */
+.depths::after { content: ""; position: absolute; z-index: -1; top: 58%; left: 22%; width: min(96vw, 940px); aspect-ratio: 1000 / 400;
+                 pointer-events: none; background: var(--deep-3); opacity: 0.55; -webkit-mask: var(--art-whale) 0 0 / 100% 100% no-repeat; mask: var(--art-whale) 0 0 / 100% 100% no-repeat; }
+
+/* ---- Berth list: a grid of plaques on the home page, a row of plates on an app page ---- */
+.berths { position: relative; width: 100%; max-width: 1160px; margin: 0 auto; padding: 28px 20px 0; display: grid; gap: 16px;
+          grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+.berth { position: relative; isolation: isolate; overflow: hidden; display: grid; grid-template-columns: auto 1fr;
+         align-items: center; align-content: start; gap: 0 12px; padding: 20px 22px 24px; border-radius: 20px;
+         background: var(--card); border: 1px solid var(--card-edge); color: inherit; text-decoration: none;
+         transition: translate 0.25s, border-color 0.25s, background-color 0.25s; }
+.berth::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--berth);
+                 box-shadow: 0 0 0 4px color-mix(in srgb, var(--berth) 24%, transparent), 0 0 18px var(--berth); }
+.berth strong { font-size: 22px; line-height: 1.25; }
+.berth p { grid-column: 1 / -1; margin: 10px 0 0; max-width: 36ch; color: var(--muted); line-height: 1.5; }
+/* The berth number is painted large across the corner of the plaque. */
+.berth-no { position: absolute; z-index: -1; right: 12px; bottom: -24px; font-size: 116px; line-height: 1; font-weight: 800;
+            letter-spacing: -0.04em; font-variant-numeric: tabular-nums; opacity: 0.08; transition: opacity 0.25s, color 0.25s; }
+.berth:hover, .berth:focus-visible { translate: 0 -3px; background: rgba(255,255,255,.12);
+                                     border-color: color-mix(in srgb, var(--berth) 75%, transparent); }
+.berth:hover .berth-no, .berth:focus-visible .berth-no { opacity: 0.22; color: var(--berth); }
+.berth:hover p, .berth:focus-visible p { color: var(--text); }
+.berth[aria-current="page"] { border-color: var(--berth); background: color-mix(in srgb, var(--berth) 16%, transparent); }
+
+/* On an app page the list shrinks to one row of plates, so the app's own text comes right after.
+   A narrow screen scrolls the row sideways; a wide one wraps it. */
+body:not([data-berth="0"]) .berths { display: flex; gap: 10px; max-width: none; padding: 20px 20px 8px;
+                                     overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity;
+                                     scroll-padding-inline: 20px; scrollbar-width: thin; scrollbar-color: var(--card-edge) transparent; }
+body:not([data-berth="0"]) .berth { flex: none; display: flex; gap: 9px; padding: 10px 16px 10px 14px; border-radius: 12px;
+                                    overflow: visible; scroll-snap-align: center; }
+body:not([data-berth="0"]) .berth:first-child { margin-left: auto; }
+body:not([data-berth="0"]) .berth:last-child { margin-right: auto; }
+body:not([data-berth="0"]) .berth::before { width: 9px; height: 9px; box-shadow: 0 0 10px var(--berth); }
+body:not([data-berth="0"]) .berth strong { font-size: 15px; }
 body:not([data-berth="0"]) .berth p { display: none; }
+body:not([data-berth="0"]) .berth-no { position: static; font-size: 13px; letter-spacing: 0; font-weight: 700; opacity: 0.75;
+                                       color: var(--muted); }
+body:not([data-berth="0"]) .berth[aria-current="page"] strong { text-decoration: underline; text-decoration-color: var(--berth);
+                                                                text-decoration-thickness: 2px; text-underline-offset: 4px; }
+@media (min-width: 860px) {
+  body:not([data-berth="0"]) .berths { flex-wrap: wrap; justify-content: center; max-width: 1160px; overflow: visible; }
+  body:not([data-berth="0"]) .berth:first-child, body:not([data-berth="0"]) .berth:last-child { margin-inline: 0; }
+}
 
 /* ---- Page content ---- */
-.content { max-width: 720px; margin: 0 auto; padding: 40px 20px 0; }
-.content p, .content li { color: var(--muted); line-height: 1.6; }
+.content { position: relative; width: 100%; max-width: 760px; margin: 0 auto; padding: 40px 20px 0; }
+.content p, .content li { color: var(--muted); line-height: 1.65; }
 .intro { font-size: 20px; margin: 0 0 32px; }
-.content h2 { font-size: 24px; margin: 40px 0 12px; }
-.content h3 { font-size: 18px; margin: 24px 0 4px; }
+.content h2 { font-size: 26px; letter-spacing: -0.01em; margin: 48px 0 14px; }
+.content h3 { font-size: 18px; margin: 26px 0 4px; }
 .content h3 + p { margin: 0; }
 .facts { list-style: none; padding: 0; margin: 0 0 32px; display: grid; gap: 12px; }
-.facts li { background: var(--card); border-radius: 16px; padding: 16px 20px; }
+@media (min-width: 700px) { .facts { grid-template-columns: 1fr 1fr; } }
+.facts li { background: var(--card); border: 1px solid var(--card-edge); border-radius: 16px; padding: 16px 18px; }
 .facts strong { color: var(--text); }
-.download { background: var(--card); border-radius: 24px; padding: 24px; margin: 0 0 32px; }
+.download { background: var(--card); border: 1px solid var(--card-edge); border-radius: 20px; padding: 24px; margin: 0 0 32px; }
 .download p { margin: 16px 0 0; }
-.button { display: inline-block; padding: 14px 22px; border-radius: 14px; background: var(--accent); color: var(--iron);
+.button { display: inline-block; padding: 14px 22px; border-radius: 14px; background: var(--accent); color: var(--ink);
           font-weight: 700; text-decoration: none; }
 .button:hover { filter: brightness(1.08); }
 .hash { font-size: 13px; }
 .hash code { overflow-wrap: anywhere; }
-footer { max-width: 720px; margin: 0 auto; padding: 48px 20px; color: var(--muted); font-size: 14px; }
+/* Fish pass behind the text; where the browser can, they swim as the page scrolls (see the end of this file). */
+.content::before, .content::after { content: ""; position: absolute; z-index: -1; aspect-ratio: 52 / 22; pointer-events: none;
+                                    background: rgba(255,255,255,.17); -webkit-mask: var(--art-fish) 0 0 / 100% 100% no-repeat; mask: var(--art-fish) 0 0 / 100% 100% no-repeat; }
+.content::before { top: 7%; left: -8vw; width: clamp(170px, 24vw, 340px); }
+.content::after { top: 62%; right: -6vw; width: clamp(130px, 17vw, 250px); scale: -1 1; opacity: 0.7; }
+
+/* The sea bed: two rows of dunes and weed, and the contact line resting above them. */
+footer { position: relative; margin-top: auto; padding: 72px max(20px, calc(50% - 360px)) clamp(150px, 19vw, 250px);
+         color: var(--muted); font-size: 14px;
+         background: linear-gradient(transparent 25%, rgba(130,160,255,.12));   /* a haze over the bed, so the dunes stand out */ }
+footer::before, footer::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; pointer-events: none; }
+footer::before, footer::after { background: var(--deep-3); }
+footer::before { height: clamp(96px, 13vw, 170px); background: color-mix(in srgb, var(--deep-3) 55%, var(--deep-2));
+                 -webkit-mask: var(--art-seabed) 30% 100% / auto 100% repeat-x; mask: var(--art-seabed) 30% 100% / auto 100% repeat-x; }
+footer::after { height: clamp(120px, 16vw, 210px); background: color-mix(in srgb, var(--deep-3) 50%, #000);
+                -webkit-mask: var(--art-seabed) 85% 100% / auto 100% repeat-x; mask: var(--art-seabed) 85% 100% / auto 100% repeat-x; }
 
 /* dock.js fades these out, swaps their content for the next page's and fades them back in. */
 [data-swap] { transition: opacity 0.25s; }
 .is-swapping [data-swap] { opacity: 0; }
 
-@media (prefers-reduced-motion: reduce) {
-  .layer { transform: none; transition: none; animation: none; }
-  .hero-text { transform: none; animation: none; }
-  .lamp::after { animation: none; }
-  [data-swap], .flag, .plate { transition: none; }
+/* The change from one time of day to the next is a slow cross-fade of the whole page. */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.9s; }
+
+/* ---- Motion. Nothing here runs when the visitor has asked the system for less motion. ---- */
+@media (prefers-reduced-motion: no-preference) {
+  .drift, .flow { animation: slide var(--t) linear infinite; }
+  .layer--water .flow { animation-direction: reverse; }
+  .layer--stars > .shift::after { animation: twinkle 4s ease-in-out infinite alternate; }
+  .lamp::after { animation: beacon 5s ease-in-out infinite; }
+  .lamp--pulse::after { animation: heartbeat 1.2s ease-out infinite; }
+  .layer--surf > .shift::before { animation: bob 4.5s ease-in-out infinite alternate; }
+  .glitter { animation: shimmer 2.2s ease-in-out infinite alternate; }
+  .glitter--alt { animation-direction: alternate-reverse; }
+  .lang { animation: sway 7s ease-in-out infinite alternate; }
+  .gull { left: -8em; animation: fly var(--t) linear var(--d) infinite, soar 9s ease-in-out var(--d) infinite alternate,
+                                 flap var(--w) ease-in-out var(--d) infinite; }
+  .gull--back { animation-direction: reverse, alternate, normal; }
+  /* The scene rests while it is scrolled out of view or paused with the button. */
+  .hero.is-offscreen :is(.drift, .flow, .gull, .glitter, .lang), .hero.is-offscreen :is(.lamp, .layer--stars > .shift)::after,
+  .hero.is-offscreen .layer--surf > .shift::before,
+  .is-paused :is(.drift, .flow, .gull, .glitter, .lang), .is-paused :is(.lamp, .layer--stars > .shift)::after,
+  .is-paused .layer--surf > .shift::before { animation-play-state: paused; }
+
+  /* Touch devices have no pointer shift, so the layers need no spare width. */
+  @media (hover: none) { .hero { --pad: 0px; } }
+
+  /* Scroll-driven animations run off the main thread. Without them dock.js moves the layers itself, and the
+     rest (decoration only) simply stays where it is. */
+  @supports ((animation-timeline: view()) and (animation-range: entry)) {
+    .layer { animation: scroll-parallax linear both; animation-timeline: scroll(root); animation-range: 0px var(--hero-h); }
+    .hero-text { --depth: 0.3; animation: scroll-parallax linear both, scroll-fade linear both;
+                 animation-timeline: scroll(root); animation-range: 0px var(--hero-h), 0px calc(var(--hero-h) * 0.66); }
+    /* Things come up out of the deep as the page scrolls. */
+    body[data-berth="0"] .berth, .facts li, .download, .content h2 {
+      animation: surface linear both; animation-timeline: view(); animation-range: entry 0% entry 80%; }
+    .depths::before { animation: rays linear both; animation-timeline: scroll(root); }
+    .depths::after { animation: whale linear both; animation-timeline: view(); }
+    .content::before { animation: swim linear both; animation-timeline: view(); }
+    .content::after { animation: swim-back linear both; animation-timeline: view(); }
+    footer::before { animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+  }
 }
+@keyframes slide { to { translate: calc(var(--period) * -1) 0; } }
+@keyframes twinkle { from { opacity: 0.15; } to { opacity: 1; } }
+@keyframes beacon { 50% { opacity: calc(0.2 * var(--lamp)); } }
+@keyframes heartbeat {
+  0%, 30%, 100% { opacity: calc(0.25 * var(--lamp)); }
+  8% { opacity: calc(0.75 * var(--lamp)); }
+  16% { opacity: calc(0.35 * var(--lamp)); }
+  22% { opacity: calc(0.6 * var(--lamp)); }
+}
+@keyframes bob { from { translate: 0 0.25em; } to { translate: 0 -0.35em; } }
+@keyframes shimmer { from { opacity: 0.2; } }
+@keyframes sway { from { rotate: -1.6deg; } to { rotate: 1.6deg; } }
+@keyframes fly { to { translate: calc(100vw + 44em) 0; } }
+@keyframes soar { from { transform: translateY(-1.6em); } to { transform: translateY(1.6em); } }
+@keyframes flap { 0%, 52%, 100% { scale: 1 1; } 62%, 84% { scale: 1 -0.55; } 73% { scale: 1 0.9; } }
+@keyframes scroll-parallax { to { transform: translate3d(0, calc(var(--hero-h) * var(--depth)), 0); } }
+@keyframes scroll-fade { to { opacity: 0; } }
+@keyframes surface { from { opacity: 0; translate: 0 2.4rem; } }
+@keyframes rays { to { translate: -9vw 0; } }
+@keyframes whale { from { translate: 62% 14%; } to { translate: -100% -14%; } }
+@keyframes swim { from { translate: -14vw 30%; } to { translate: 62vw -30%; } }
+@keyframes swim-back { from { translate: 12vw -20%; } to { translate: -58vw 30%; } }
+@keyframes rise { from { translate: 0 40%; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .layer, [data-swap], .flag, .plate, .berth, .berth-no, .orb { transition: none; }
+}
+@media (prefers-reduced-motion: reduce) { .js .pause { display: none; } }
+@media print { *, *::before, *::after { animation: none !important; } }

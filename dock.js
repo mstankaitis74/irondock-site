@@ -1,45 +1,154 @@
-// Harbour scene: parallax on scroll and pointer, and travel between berths without a page reload.
+// Harbour scene: time of day, parallax on scroll and pointer, and travel between berths without a page reload.
 (() => {
   const hero = document.querySelector('.hero');
   if (!hero) return;
+  const root = document.documentElement;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  root.classList.add('js');
 
-  // Lamps stop pulsing and the parallax stops updating while the scene is scrolled out of view.
+  // ---- Time of day ----
+  // The script in <head> has already picked dawn, day, dusk or night from the visitor's clock (window.skyNow).
+  // A click on the sun or moon moves on to the next one and keeps it for this browser tab.
+  const phases = ['dawn', 'day', 'dusk', 'night'];
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  let skyChosen = false;
+  try {
+    skyChosen = phases.includes(sessionStorage.getItem('sky'));
+  } catch {
+    // Storage is blocked: the scene simply follows the clock.
+  }
+  const paintThemeColor = () => {
+    if (themeColor) themeColor.content = getComputedStyle(root).getPropertyValue('--sky-1').trim();
+  };
+  const setSky = (phase) => {
+    const apply = () => {
+      root.dataset.sky = phase;
+      paintThemeColor();
+    };
+    if (document.startViewTransition && !reducedMotion) document.startViewTransition(apply);
+    else apply();
+  };
+  hero.querySelector('.orb')?.addEventListener('click', () => {
+    const next = phases[(phases.indexOf(root.dataset.sky) + 1) % phases.length];
+    skyChosen = true;
+    try {
+      sessionStorage.setItem('sky', next);
+    } catch {
+      // Not remembered for the next page load, but still switched.
+    }
+    setSky(next);
+  });
+  setInterval(() => {
+    const now = window.skyNow?.();
+    if (!skyChosen && now && now !== root.dataset.sky) setSky(now);
+  }, 300000);
+  paintThemeColor();
+
+  // ---- Pause button: stops everything that moves on its own (dock.css: .is-paused) ----
+  const pauseButton = hero.querySelector('.pause');
+  const labelPauseButton = () => {
+    if (!pauseButton) return;
+    const label = pauseButton.dataset[root.classList.contains('is-paused') ? 'play' : 'pause'];
+    pauseButton.setAttribute('aria-label', label);
+    pauseButton.title = label;
+  };
+  pauseButton?.addEventListener('click', () => {
+    root.classList.toggle('is-paused');
+    labelPauseButton();
+  });
+
+  // The scene rests and the parallax stops updating while it is scrolled out of view.
   let heroVisible = true;
   new IntersectionObserver(([entry]) => {
     heroVisible = entry.isIntersecting;
     hero.classList.toggle('is-offscreen', !heroVisible);
   }).observe(hero);
 
-  // ---- Parallax: feeds scroll position and pointer offset to CSS (see .layer in dock.css) ----
+  // ---- Parallax ----
+  // The pointer shifts every layer by its own reach (--reach, in the scene's em): the transform goes on the
+  // layer's .shift, a plain box, so a frame costs next to nothing. Scroll parallax belongs to dock.css
+  // (a scroll-driven animation on the layer); only a browser without those gets it from here.
+  const layers = [...hero.querySelectorAll('.layer')].map((element) => {
+    const style = getComputedStyle(element);
+    return {
+      element,
+      shift: element.firstElementChild,
+      depth: parseFloat(style.getPropertyValue('--depth')),
+      reach: parseFloat(style.getPropertyValue('--reach')),
+      pan: parseFloat(style.getPropertyValue('--f')),
+      shifted: '',
+    };
+  });
   const finePointer = matchMedia('(hover: hover) and (pointer: fine)').matches;
-  // On touch devices dock.css moves the layers with a scroll-driven animation when the browser has one.
-  const cssScrollParallax = matchMedia('(hover: none)').matches && CSS.supports('animation-timeline: scroll(root)');
-  if (!reducedMotion && !(cssScrollParallax && !finePointer)) {
-    let pointerTarget = 0;
-    let pointer = 0;
+  const cssScrollParallax = CSS.supports('(animation-timeline: view()) and (animation-range: entry)');
+  if (!reducedMotion && (finePointer || !cssScrollParallax)) {
+    const heroText = hero.querySelector('.hero-text');
+    let targetX = 0;
+    let targetY = 0;
+    let pointerX = 0;
+    let pointerY = 0;
     let frame = 0;
     let heroHeight = hero.offsetHeight;
-    addEventListener('resize', () => { heroHeight = hero.offsetHeight; });
 
     const render = () => {
       frame = 0;
-      pointer += (pointerTarget - pointer) * 0.08;
-      if (!cssScrollParallax) hero.style.setProperty('--scroll', Math.min(scrollY, heroHeight));
-      hero.style.setProperty('--pointer', pointer.toFixed(4));
-      if (heroVisible && Math.abs(pointerTarget - pointer) > 0.001) schedule();
+      pointerX += (targetX - pointerX) * 0.08;
+      pointerY += (targetY - pointerY) * 0.08;
+      const em = heroHeight / 100;
+      let moved = false;
+      for (const layer of layers) {
+        const shifted = `translate3d(${(-pointerX * layer.reach * em).toFixed(1)}px, ${(-pointerY * layer.reach * em * 0.22).toFixed(1)}px, 0)`;
+        if (shifted === layer.shifted) continue;
+        layer.shift.style.transform = layer.shifted = shifted;
+        moved = true;
+      }
+      if (!cssScrollParallax) {
+        const scroll = Math.min(scrollY, heroHeight);
+        for (const layer of layers) layer.element.style.transform = `translate3d(0, ${(scroll * layer.depth).toFixed(1)}px, 0)`;
+        heroText.style.transform = `translate3d(0, ${(scroll * 0.3).toFixed(1)}px, 0)`;
+        heroText.style.opacity = Math.max(1 - (scroll / heroHeight) * 1.5, 0).toFixed(3);
+      }
+      // Keep going until the layers have caught up with the pointer.
+      if (heroVisible && moved) schedule();
     };
     const schedule = () => { frame ||= requestAnimationFrame(render); };
 
-    addEventListener('scroll', () => { if (heroVisible) schedule(); }, { passive: true });
+    addEventListener('resize', () => {
+      heroHeight = hero.offsetHeight;
+      schedule();
+    });
+    if (!cssScrollParallax) addEventListener('scroll', () => { if (heroVisible) schedule(); }, { passive: true });
     if (finePointer) {
       addEventListener('pointermove', (event) => {
-        pointerTarget = (event.clientX / innerWidth) * 2 - 1;
+        targetX = (event.clientX / innerWidth) * 2 - 1;
+        targetY = Math.min((event.clientY + scrollY) / heroHeight, 1) * 2 - 1;
         if (heroVisible) schedule();
       });
     }
     schedule();
   }
+
+  // ---- Berth list ----
+  // On an app page the list is one row; on a narrow screen the row scrolls, so the current app is brought to the middle.
+  const centreCurrentBerth = (smooth) => {
+    const list = document.querySelector('.berths');
+    const current = list?.querySelector('[aria-current="page"]');
+    if (!current || list.scrollWidth <= list.clientWidth) return;
+    list.scrollTo({
+      left: current.offsetLeft - (list.clientWidth - current.offsetWidth) / 2,
+      behavior: smooth && !reducedMotion ? 'smooth' : 'auto',
+    });
+  };
+  centreCurrentBerth(false);
+
+  // Pointing at an app's card or sign lights its lamp on the pier.
+  const mark = (berth) => hero.querySelector(`.mark[data-berth="${berth}"]`);
+  const light = (event, on) => {
+    const link = event.target.closest?.('a[data-berth]');
+    if (link) mark(link.dataset.berth)?.classList.toggle('is-hot', on);
+  };
+  document.addEventListener('pointerover', (event) => light(event, true), { passive: true });
+  document.addEventListener('pointerout', (event) => light(event, false), { passive: true });
 
   // ---- Navigation between berths ----
   // Every page is a complete HTML file (search engines and direct visits get the real thing).
@@ -78,6 +187,9 @@
     if (push) history.pushState(null, '', url);
     if (scrollY > 0) scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
 
+    // A longer trip along the pier takes a little longer, so the scene never becomes a blur.
+    const distance = Math.abs(berth - hero.style.getPropertyValue('--cam'));
+    hero.style.setProperty('--travel', `${Math.min(1.1 + 0.3 * distance, 2.6)}s`);
     hero.style.setProperty('--cam', berth);
     document.body.classList.add('is-swapping');
     await new Promise((resolve) => setTimeout(resolve, reducedMotion ? 0 : 250));
@@ -93,19 +205,23 @@
     document.title = next.title;
     document.documentElement.lang = next.documentElement.lang;   // also hoists the other flag (dock.css)
     document.body.dataset.berth = berth;
-    // The mast stays in place so its flags can move; only its target changes with the page.
-    const mast = document.querySelector('.lang');
-    const nextMast = next.querySelector('.lang');
-    if (mast && nextMast) {
-      mast.href = new URL(nextMast.getAttribute('href'), url).href;
-      mast.hreflang = nextMast.hreflang;
-      mast.setAttribute('aria-label', nextMast.getAttribute('aria-label'));
-    }
-    document.querySelectorAll('.berth').forEach((card) => {
-      if (card.dataset.berth === berth) card.setAttribute('aria-current', 'page');
-      else card.removeAttribute('aria-current');
+    // Controls marked [data-sync] stay in place (the flags move, the scene keeps running); only their
+    // labels and targets follow the page.
+    document.querySelectorAll('[data-sync]').forEach((control) => {
+      const source = next.querySelector(`[data-sync="${control.dataset.sync}"]`);
+      if (!source) return;
+      for (const name of ['aria-label', 'title', 'hreflang', 'data-pause', 'data-play']) {
+        if (source.hasAttribute(name)) control.setAttribute(name, source.getAttribute(name));
+      }
+      if (source.hasAttribute('href')) control.href = new URL(source.getAttribute('href'), url).href;
+    });
+    labelPauseButton();
+    document.querySelectorAll('.berth, .mark').forEach((link) => {
+      if (link.dataset.berth === berth) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
     });
     document.body.classList.remove('is-swapping');
+    centreCurrentBerth(true);
   };
 
   // Fetch a page as soon as a tap or hover shows the intent, and the other berths once the browser is idle,
@@ -123,29 +239,32 @@
   }
 
   // ---- Swipe between berths on a touch screen ----
-  // A sideways drag on the scene or the berth list moves the camera with the finger. Letting go past a
-  // quarter of the way, or with a flick, travels to the neighbouring berth; otherwise the scene goes back.
-  const lastBerth = Number(getComputedStyle(hero).getPropertyValue('--stations'));
-  const mark = (berth) => hero.querySelector(`.mark[data-berth="${berth}"]`);
+  // A sideways drag on the scene moves the camera with the finger. Letting go past a quarter of the way,
+  // or with a flick, travels to the neighbouring berth; otherwise the scene goes back.
+  const lastBerth = Number(hero.style.getPropertyValue('--stations'));
   let drag = null;
   let draggedAt = 0;
 
+  // While the finger is down each layer is moved directly; letting go hands the camera back to --cam,
+  // and the layers glide from where the finger left them to the berth.
+  const follow = (cam) => {
+    for (const layer of layers) layer.element.style.translate = `${(-cam * layer.pan * drag.step).toFixed(1)}px 0`;
+  };
   const settle = (cam) => {
     hero.classList.remove('is-dragging');
     hero.classList.add('is-settling');
     hero.style.setProperty('--cam', cam);
+    for (const layer of layers) layer.element.style.translate = '';
     setTimeout(() => hero.classList.remove('is-settling'), 500);
   };
 
-  const startDrag = (event) => {
+  hero.addEventListener('pointerdown', (event) => {
     if (event.pointerType === 'mouse' || !event.isPrimary) return;
     drag = {
       id: event.pointerId, startX: event.clientX, startY: event.clientY, lastX: event.clientX, lastTime: event.timeStamp,
       from: Number(document.body.dataset.berth), step: mark(1).offsetLeft - mark(0).offsetLeft, moved: 0, speed: 0, active: false,
     };
-  };
-  hero.addEventListener('pointerdown', startDrag);
-  document.querySelector('.berths')?.addEventListener('pointerdown', startDrag);
+  });
 
   addEventListener('pointermove', (event) => {
     if (!drag || event.pointerId !== drag.id) return;
@@ -164,19 +283,22 @@
     // Past either end of the dock the scene resists: it follows at a third of the finger's travel.
     if (cam < 0) cam /= 3;
     if (cam > lastBerth) cam = lastBerth + (cam - lastBerth) / 3;
-    hero.style.setProperty('--cam', cam.toFixed(4));
+    follow(cam);
   });
 
   const endDrag = (event) => {
     if (!drag || event.pointerId !== drag.id) return;
     const { active, from, moved, speed } = drag;
-    drag = null;
-    if (!active) return;
+    if (!active) {
+      drag = null;
+      return;
+    }
     draggedAt = event.timeStamp;
     const flick = Math.abs(speed) > 0.5 && Math.sign(-speed) === Math.sign(moved);
     const travel = event.type === 'pointerup' && (Math.abs(moved) > 0.25 || flick) ? Math.sign(moved) : 0;
     const target = Math.min(Math.max(from + travel, 0), lastBerth);
     settle(target);
+    drag = null;
     if (target !== from) visit(mark(target).href, true);
   };
   addEventListener('pointerup', endDrag);

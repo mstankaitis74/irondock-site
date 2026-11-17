@@ -19,12 +19,16 @@
 <meta name="robots" content="max-image-preview:large">
 <meta name="theme-color" content="#14295a">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="../dock.css">
-<link rel="preload" as="image" type="image/svg+xml" href="../scene/sky.svg">
-<link rel="preload" as="image" type="image/svg+xml" href="../scene/far.svg">
-<link rel="preload" as="image" type="image/svg+xml" href="../scene/dock.svg">
-<link rel="preload" as="image" type="image/svg+xml" href="../scene/water.svg">
-<link rel="preload" as="image" type="image/svg+xml" href="../scene/quay.svg">
+<script>
+// Time of day for the scene: the visitor's own clock, with sunrise and sunset worked out for about 55 degrees north.
+(function(){function now(){var d=new Date,y=d.getFullYear(),n=(d-new Date(y,0,0))/864e5,
+a=-.4091*Math.cos(6.2832*(n+10)/365),h=Math.acos(Math.max(-1,Math.min(1,-1.428*Math.tan(a))))*3.8197,
+z=(Math.max(new Date(y,0,1).getTimezoneOffset(),new Date(y,6,1).getTimezoneOffset())-d.getTimezoneOffset())/60,
+t=d.getHours()+d.getMinutes()/60-12.4-z,s=Math.abs(t);return s<h-.7?"day":s<h+.7?t<0?"dawn":"dusk":"night"}
+var o;try{o=sessionStorage.getItem("sky")}catch(e){}
+window.skyNow=now;document.documentElement.dataset.sky=/^(dawn|day|dusk|night)$/.test(o)?o:now()})()
+</script>
+<link rel="stylesheet" href="../dock.css?v=2">
 <script type="application/ld+json">
 [
   {
@@ -63,56 +67,70 @@
 </script>
 </head>
 <body data-berth="1">
-<!-- The scene, the berth list and the language mast are the same on every page; only --cam (which berth the
-     camera is at) and the link targets differ. dock.js keeps them in place when you move between pages. -->
-<header class="hero" style="--cam: 1">
-  <div class="layer layer--sky"></div>
-  <div class="layer layer--far"></div>
-  <div class="layer layer--dock" aria-hidden="true" data-swap-lang="dock">
+<!-- The scene, the berth list and the language flags are the same on every page; only --cam (which berth the
+     camera is at) and the link targets differ. dock.js keeps them in place when you move between pages.
+     --stations is the number of the last berth. -->
+<header class="hero" style="--cam: 1; --stations: 3">
+  <div class="layer layer--stars"><div class="shift"></div></div>
+  <div class="layer layer--orb"><div class="shift"><button class="orb" type="button" data-sync="sky" aria-label="Change the time of day" title="Change the time of day"></button></div></div>
+  <div class="layer layer--clouds-far"><div class="shift"><i class="drift"></i></div></div>
+  <div class="layer layer--clouds-near"><div class="shift"><i class="drift"></i></div></div>
+  <div class="layer layer--skyline"><div class="shift"></div></div>
+  <div class="layer layer--cranes"><div class="shift"></div></div>
+  <div class="layer layer--gulls" aria-hidden="true"><div class="shift">
+    <i class="gull" style="--y: 27em; --s: 0.7; --t: 62s; --d: -8s; --w: 3.3s; --x: 12%"></i>
+    <i class="gull gull--back" style="--y: 36em; --s: 1; --t: 44s; --d: -31s; --w: 2.7s; --x: 34%"></i>
+    <i class="gull" style="--y: 31em; --s: 0.6; --t: 70s; --d: -52s; --w: 3.6s; --x: 58%"></i>
+    <i class="gull" style="--y: 40em; --s: 1.3; --t: 36s; --d: -20s; --w: 2.4s; --x: 76%"></i>
+    <i class="gull gull--back" style="--y: 45em; --s: 0.85; --t: 50s; --d: -3s; --w: 3s; --x: 90%"></i>
+  </div></div>
+  <div class="layer layer--swell"><div class="shift"><i class="flow"></i></div></div>
+  <div class="layer layer--glitter"><div class="shift"><i class="glitter glitter--far"></i></div></div>
+  <div class="layer layer--dock" aria-hidden="true"><div class="shift" data-swap-lang="dock">
     <a class="mark mark--home" href="../" data-nav data-berth="0" tabindex="-1" style="--n: 0; --berth: #fff1cf"><i class="lamp"></i></a>
-    <a class="mark" href="../beatsy/" data-nav data-berth="1" tabindex="-1" style="--n: 1; --berth: #ff8a7a"><i class="lamp lamp--pulse"></i><span class="plate">Beatsy <b>01</b></span></a>
+    <a class="mark" href="../beatsy/" data-nav data-berth="1" tabindex="-1" style="--n: 1; --berth: #ff8a7a" aria-current="page"><i class="lamp lamp--pulse"></i><span class="plate">Beatsy <b>01</b></span></a>
     <a class="mark" href="../zalias-ket/" data-nav data-berth="2" tabindex="-1" style="--n: 2; --berth: #6fdc8c"><i class="lamp"></i><span class="plate">Žalias KET <b>02</b></span></a>
     <a class="mark" href="../talkvault/" data-nav data-berth="3" tabindex="-1" style="--n: 3; --berth: #ffcb6b"><i class="lamp"></i><span class="plate">Talkvault <b>03</b></span></a>
-  </div>
-  <div class="layer layer--water" aria-hidden="true">
+  </div></div>
+  <div class="layer layer--water" aria-hidden="true"><div class="shift">
+    <i class="flow"></i>
     <i class="reflection" style="--n: 0; --berth: #fff1cf"></i>
     <i class="reflection" style="--n: 1; --berth: #ff8a7a"></i>
     <i class="reflection" style="--n: 2; --berth: #6fdc8c"></i>
     <i class="reflection" style="--n: 3; --berth: #ffcb6b"></i>
+  </div></div>
+  <div class="layer layer--glitter"><div class="shift"><i class="glitter glitter--near"></i><i class="glitter glitter--near glitter--alt"></i></div></div>
+  <div class="layer layer--surf"><div class="shift"><i class="flow"></i></div></div>
+  <div class="hero-text">
+    <div data-swap="hero">
+      <p class="crumb"><a href="../" data-nav>Irondock</a></p>
+      <h1>Beatsy</h1>
+      <p class="lead">Check your heart rate with your phone camera.</p>
+    </div>
   </div>
-  <div class="layer layer--quay"></div>
-  <div class="hero-text" data-swap="hero">
-    <p class="crumb"><a href="../" data-nav>Irondock</a></p>
-    <h1>Beatsy</h1>
-    <p class="lead">Check your heart rate with your phone camera.</p>
-  </div>
-  <a class="lang" href="../lt/beatsy/" data-nav hreflang="lt" aria-label="Lietuviškai">
+  <a class="lang" href="../lt/beatsy/" data-nav data-sync="lang" hreflang="lt" aria-label="Lietuviškai">
     <span class="flag flag--en" aria-hidden="true">EN</span>
     <span class="flag flag--lt" aria-hidden="true">LT</span>
   </a>
+  <button class="pause" type="button" data-sync="pause" data-pause="Pause the animation" data-play="Play the animation" aria-label="Pause the animation" title="Pause the animation"></button>
 </header>
 
+<div class="depths">
 <nav class="berths" aria-label="Apps" data-swap-lang="nav">
   <a class="berth" href="../beatsy/" data-nav data-berth="1" style="--berth: #ff8a7a" aria-current="page">
-    <div class="berth-plate"><b>01</b></div>
-    <div>
-      <h2>Beatsy</h2>
-      <p>Check your heart rate with your phone camera. Ads never interrupt a measurement, and your data stays on your phone.</p>
-    </div>
+    <b class="berth-no">01</b>
+    <strong>Beatsy</strong>
+    <p>Check your heart rate with your phone camera. Ads never interrupt a measurement, and your data stays on your phone.</p>
   </a>
   <a class="berth" href="../zalias-ket/" data-nav data-berth="2" style="--berth: #6fdc8c">
-    <div class="berth-plate"><b>02</b></div>
-    <div>
-      <h2>Žalias KET</h2>
-      <p>Prepare for the Lithuanian driving theory exam: lessons, tests, traffic situations and every road sign. The app is in Lithuanian.</p>
-    </div>
+    <b class="berth-no">02</b>
+    <strong>Žalias KET</strong>
+    <p>Prepare for the Lithuanian driving theory exam: lessons, tests, traffic situations and every road sign. The app is in Lithuanian.</p>
   </a>
   <a class="berth" href="../talkvault/" data-nav data-berth="3" style="--berth: #ffcb6b">
-    <div class="berth-plate"><b>03</b></div>
-    <div>
-      <h2>Talkvault</h2>
-      <p>Records your phone calls automatically and keeps them on your phone, sorted by contact.</p>
-    </div>
+    <b class="berth-no">03</b>
+    <strong>Talkvault</strong>
+    <p>Records your phone calls automatically and keeps them on your phone, sorted by contact.</p>
   </a>
 </nav>
 
@@ -141,6 +159,7 @@
 </main>
 
 <footer data-swap-lang="footer">Contact: <a href="mailto:info@irondock.dev">info@irondock.dev</a></footer>
-<script src="../dock.js"></script>
+</div>
+<script src="../dock.js?v=2"></script>
 </body>
 </html>
