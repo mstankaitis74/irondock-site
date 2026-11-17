@@ -1,40 +1,48 @@
 // The hidden game under the water. A fish swims for as long as it can. Bigger fish cross the water, turn on
 // it when it comes close and swallow it; small fry only knock it aside; junk sinks from above; now and then a
 // hook comes down from the pier and hangs for a while; a current pushes now and then; the edges push back.
-// All of it gets worse until something gets the fish: nobody wins, the score is what counts. A firefly that
-// falls into the water is worth eating, and once in a while a gift sinks by and helps for a few seconds.
+// All of it gets worse until something gets the fish: nobody wins, the score is what counts. What falls in
+// alive is worth eating: a firefly for its points; once in a while a beetle, which also keeps the fish safe
+// for a few seconds; and a caterpillar, worth the most, after which the fish is so small for a while that
+// even the small fry swallow it.
 // dock.js fetches this file only when the game is found (five quick clicks on a buoy or on one spot under the
 // water, or the word "fish" typed anywhere) and calls dive(). The styles are in dock.css (.dive).
 
 const WORDS = {
   en: {
     name: 'A game under the water',
-    hint: 'Steer with the mouse or the arrow keys. Keep clear of bigger fish, junk and hooks; catch whatever glows.',
-    touch: 'Drag anywhere to swim. Keep clear of bigger fish, junk and hooks; catch whatever glows.',
+    hint: 'Steer with the mouse or the arrow keys. Keep clear of bigger fish, junk and hooks; eat the bugs that fall in.',
+    touch: 'Drag anywhere to swim. Keep clear of bigger fish, junk and hooks; eat the bugs that fall in.',
     score: 'Score', best: 'Best', newBest: 'New best!', died: 'You died',
     again: 'Again', leave: 'Leave', close: 'Leave the game (Esc)',
-    shield: 'Bubble', slow: 'Slow water', small: 'Tiny',
+    shield: 'Bubble', small: 'Tiny',
   },
   lt: {
     name: 'Žaidimas po vandeniu',
-    hint: 'Valdyk pele arba rodyklėmis. Saugokis didesnių žuvų, šiukšlių ir kabliukų, o kas šviečia – gaudyk.',
-    touch: 'Vesk pirštu bet kur ekrane. Saugokis didesnių žuvų, šiukšlių ir kabliukų, o kas šviečia – gaudyk.',
+    hint: 'Valdyk pele arba rodyklėmis. Saugokis didesnių žuvų, šiukšlių ir kabliukų, o įkritusius vabalus valgyk.',
+    touch: 'Vesk pirštu bet kur ekrane. Saugokis didesnių žuvų, šiukšlių ir kabliukų, o įkritusius vabalus valgyk.',
     score: 'Taškai', best: 'Rekordas', newBest: 'Naujas rekordas!', died: 'Tu žuvai',
     again: 'Dar kartą', leave: 'Išeiti', close: 'Išeiti iš žaidimo (Esc)',
-    shield: 'Burbulas', slow: 'Lėtas vanduo', small: 'Mažytė',
+    shield: 'Burbulas', small: 'Mažytė',
   },
 };
 const RAMP = 120;          // seconds from easy to nearly impossible; after that it only gets worse faster
 const BEST = 'dive-best';  // the best score of this browser tab (sessionStorage)
-const FIREFLY = 100;       // points for eating one
 const TAU = Math.PI * 2;
-// What sinks by now and then, its colour and for how many seconds it helps: a bubble nothing gets through,
-// water in which everything else is slow, and a fish half its size.
-const GIFTS = {
-  shield: { colour: '#bfe6ff', seconds: 5 },
-  slow: { colour: '#ffcb6b', seconds: 5 },
-  small: { colour: '#6fdc8c', seconds: 7 },
+// What falls in alive, and what the fish gets for eating it. Every one gives points. A beetle also puts a
+// bubble round the fish that nothing gets through. A caterpillar is a gamble: it makes the fish smaller than
+// the small fry, which can then swallow it too.
+const BUGS = {
+  firefly: { points: 100 },
+  beetle: { points: 50, power: 'shield' },
+  caterpillar: { points: 200, power: 'small' },
 };
+// For how many seconds each of those lasts, and the colour of the ring that runs down with it.
+const POWERS = {
+  shield: { colour: '#bfe6ff', seconds: 5 },
+  small: { colour: '#6fdc8c', seconds: 15 },
+};
+const SMALL = 0.4;   // the size of the fish after a caterpillar: the smallest fry is 0.45
 // The junk that falls in: its size in lengths of the player's fish, how fast it sinks and turns beside the
 // rest, and how much of its size hits.
 const JUNK = {
@@ -107,10 +115,10 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
   let unit = 0;        // the length of the player's fish
   let floor = 0;       // where the seabed begins
   let rim = 0;         // how near an edge the fish may stay
-  let giftSize = 0;    // the radius of a gift
   let hookSize = 0;    // the length of a hook
   let hookReach = 0;   // how near a hook the fish may come
   let flySize = 0;     // the length of a firefly
+  let bugSize = 0;     // the length of a beetle; a caterpillar is nearly twice as long
   const resize = () => {
     const ratio = Math.min(devicePixelRatio || 1, 2);
     width = box.clientWidth;
@@ -122,36 +130,35 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     unit = clamp(reach * 0.07, 30, 58);
     floor = height - (parseFloat(getComputedStyle(box, '::after').height) || unit * 2) * 0.58;   // the seabed is drawn by dock.css
     rim = unit * 1.3;
-    giftSize = Math.max(unit * 0.4, 17);
     hookSize = Math.max(unit * 0.6, 24);
     hookReach = unit * 1.35;
     flySize = Math.max(unit * 0.3, 11);
+    bugSize = Math.max(unit * 0.5, 17);
   };
   resize();
 
   // ---- What there is in the water ----
   let state = 'play';   // 'play', then 'ending' while whatever got the fish finishes with it, then 'over'
   let time = 0;         // seconds played: how hard it is
-  let clock = 0;        // seconds the water has moved: slower in slow water, and it runs on after the end
+  let clock = 0;        // seconds the water has moved: it runs on after the end, when `time` has stopped
   let score = 0;
   let ending = null;    // what got the fish, and how far that has gone
   let others = [];      // the bigger fish
-  let fry = [];         // the small ones, which only bump
+  let fry = [];         // the small ones, which only bump the fish unless it is smaller still
   let junk = [];
-  let gifts = [];
-  let flies = [];       // fireflies that fell in
+  let bugs = [];        // fireflies, beetles and caterpillars that fell in
   let hooks = [];
   let pops = [];        // small bubbles that something just let out
-  let notes = [];       // a gift's name or a firefly's points, floating up from where they were got
-  let powers = {};      // seconds left of each gift
+  let notes = [];       // what a bug gave, floating up from where it was eaten
+  let powers = {};      // seconds left of the bubble and of being small
   let current = null;   // the current that is pushing, if one is
   let trail = 0;        // how far it has swum since its last bubble
   let finger = null;    // the finger that steers
   let sinceFish = 0;
   let untilFry = 0;
   let untilJunk = 0;
-  let untilGift = 0;
   let untilFly = 0;
+  let untilTreat = 0;   // until the next beetle or caterpillar
   let untilHook = 0;
   let untilCurrent = 0;
   const flow = { x: 0, y: 0, force: 0 };   // the current's direction and how strong it is right now
@@ -171,20 +178,19 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     others = [];
     fry = [];
     junk = [];
-    gifts = [];
-    flies = [];
+    bugs = [];
     hooks = [];
     pops = [];
     notes = [];
-    powers = { shield: 0, slow: 0, small: 0 };
+    powers = { shield: 0, small: 0 };
     current = null;
     trail = 0;
     finger = null;
     sinceFish = -0.8;   // a moment of empty water before the first fish
     untilFry = 2;
     untilJunk = random(12, 17);
-    untilGift = random(20, 34);
     untilFly = random(4, 8);
+    untilTreat = random(20, 34);
     untilHook = random(30, 60);
     untilCurrent = random(14, 20);
     Object.assign(flow, { x: 0, y: 0, force: 0 });
@@ -373,74 +379,93 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     ctx.restore();
   };
 
-  // A gift is a small glowing ball with a sign of what it does.
-  const drawGift = (gift) => {
-    const radius = giftSize;
+  // What the fish eats, each drawn about its middle and shrinking as it is eaten. A firefly has a dark body,
+  // two wings that beat and a tail that glows and flickers until it reaches the seabed. A beetle has an amber
+  // shell and six legs that paddle. A caterpillar is a row of green rings that wriggles.
+  const drawBug = (bug) => {
+    const body = '#1a2242';
     ctx.save();
-    ctx.translate(gift.at, gift.y);
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(0, 0, radius * (1.3 + 0.1 * Math.sin(clock * 4 + gift.phase)), 0, TAU);
-    ctx.stroke();
-    ctx.fillStyle = GIFTS[gift.kind].colour;
-    ctx.beginPath();
-    ctx.arc(0, 0, radius, 0, TAU);
-    ctx.fill();
-    ctx.strokeStyle = dark;
-    ctx.lineWidth = Math.max(2, radius * 0.16);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    if (gift.kind === 'shield') {
-      ctx.arc(0, 0, radius * 0.5, 0, TAU);
-    } else if (gift.kind === 'slow') {
-      ctx.arc(0, 0, radius * 0.56, 0, TAU);
-      ctx.moveTo(0, -radius * 0.34);
-      ctx.lineTo(0, 0);
-      ctx.lineTo(radius * 0.26, 0);
-    } else {
-      ctx.moveTo(-radius * 0.56, -radius * 0.3);
-      ctx.lineTo(-radius * 0.2, 0);
-      ctx.lineTo(-radius * 0.56, radius * 0.3);
-      ctx.moveTo(radius * 0.56, -radius * 0.3);
-      ctx.lineTo(radius * 0.2, 0);
-      ctx.lineTo(radius * 0.56, radius * 0.3);
+    ctx.translate(bug.at, bug.y);
+    if (bug.eaten !== undefined) {
+      const left = clamp(1 - bug.eaten / 0.14, 0.15, 1);
+      ctx.scale(left, left);
     }
-    ctx.stroke();
-    ctx.restore();
-  };
-
-  // A firefly: a small dark body with two wings that beat, and a tail that glows and flickers. It goes out as
-  // it reaches the seabed, and shrinks as it is eaten.
-  const drawFly = (fly) => {
-    const size = flySize * (fly.eaten === undefined ? 1 : clamp(1 - fly.eaten / 0.14, 0.15, 1));
-    const lit = (0.72 + 0.28 * Math.sin(clock * 5 + fly.phase)) * clamp((floor - fly.y) / unit, 0, 1);
-    const beat = Math.sin(clock * 34 + fly.phase) * 0.4;
-    ctx.save();
-    ctx.translate(fly.at, fly.y);
-    const glow = ctx.createRadialGradient(0, size * 0.3, 0, 0, size * 0.3, size * 3);
-    glow.addColorStop(0, `rgba(234,255,140,${0.85 * lit})`);
-    glow.addColorStop(0.3, `rgba(228,255,128,${0.34 * lit})`);
-    glow.addColorStop(1, 'rgba(228,255,128,0)');
-    ctx.fillStyle = glow;
-    ctx.beginPath();
-    ctx.arc(0, size * 0.3, size * 3, 0, TAU);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    for (const side of [-1, 1]) {
+    if (bug.kind === 'firefly') {
+      const size = flySize;
+      const lit = (0.72 + 0.28 * Math.sin(clock * 5 + bug.phase)) * clamp((floor - bug.y) / unit, 0, 1);
+      const beat = Math.sin(clock * 34 + bug.phase) * 0.4;
+      const glow = ctx.createRadialGradient(0, size * 0.3, 0, 0, size * 0.3, size * 3);
+      glow.addColorStop(0, `rgba(234,255,140,${0.85 * lit})`);
+      glow.addColorStop(0.3, `rgba(228,255,128,${0.34 * lit})`);
+      glow.addColorStop(1, 'rgba(228,255,128,0)');
+      ctx.fillStyle = glow;
       ctx.beginPath();
-      ctx.ellipse(side * size * 0.5, -size * 0.3, size * 0.55, size * 0.22, side * (0.5 + beat), 0, TAU);
+      ctx.arc(0, size * 0.3, size * 3, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.ellipse(side * size * 0.5, -size * 0.3, size * 0.55, size * 0.22, side * (0.5 + beat), 0, TAU);
+        ctx.fill();
+      }
+      ctx.fillStyle = body;
+      ctx.beginPath();
+      ctx.ellipse(0, -size * 0.28, size * 0.25, size * 0.4, 0, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = `rgba(238,255,150,${0.35 + 0.65 * lit})`;
+      ctx.beginPath();
+      ctx.ellipse(0, size * 0.32, size * 0.27, size * 0.36, 0, 0, TAU);
+      ctx.fill();
+    } else if (bug.kind === 'beetle') {
+      const size = bugSize;
+      ctx.rotate(Math.sin(clock * 3 + bug.phase) * 0.3);   // it rocks as it sinks
+      ctx.strokeStyle = body;
+      ctx.lineWidth = Math.max(1.5, size * 0.07);
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (const side of [-1, 1]) {
+        for (const leg of [-1, 0, 1]) {
+          ctx.moveTo(side * size * 0.28, leg * size * 0.24);
+          ctx.lineTo(side * size * 0.64, leg * size * 0.34 + Math.sin(clock * 16 + bug.phase + leg * 2 + side) * size * 0.1);
+        }
+      }
+      ctx.stroke();
+      ctx.fillStyle = body;
+      ctx.beginPath();
+      ctx.arc(0, -size * 0.42, size * 0.2, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = '#ffc35a';
+      ctx.beginPath();
+      ctx.ellipse(0, size * 0.06, size * 0.38, size * 0.46, 0, 0, TAU);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(26,34,66,0.7)';
+      ctx.beginPath();
+      ctx.moveTo(0, -size * 0.38);
+      ctx.lineTo(0, size * 0.52);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(26,34,66,0.75)';
+      for (const [x, y] of [[-0.18, -0.12], [0.18, -0.12], [-0.2, 0.22], [0.2, 0.22]]) {
+        ctx.beginPath();
+        ctx.arc(x * size, y * size, size * 0.07, 0, TAU);
+        ctx.fill();
+      }
+    } else {
+      const ring = bugSize * 0.2;
+      const rise = (part) => Math.sin(clock * 6 + bug.phase - part * 0.9) * ring * 0.8;
+      ctx.strokeStyle = 'rgba(10,30,45,0.4)';
+      ctx.lineWidth = 1;
+      for (let part = 5; part >= 0; part--) {   // the head is the first ring and is drawn last, on top
+        ctx.fillStyle = part === 0 ? '#4fc474' : part % 2 ? '#86e59f' : '#6fdc8c';
+        ctx.beginPath();
+        ctx.arc((part - 2.5) * ring * 1.45, rise(part), part === 0 ? ring * 1.2 : ring, 0, TAU);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.fillStyle = body;
+      ctx.beginPath();
+      ctx.arc(-2.5 * ring * 1.45 - ring * 0.4, rise(0) - ring * 0.3, ring * 0.24, 0, TAU);
       ctx.fill();
     }
-    ctx.fillStyle = '#1a2242';
-    ctx.beginPath();
-    ctx.ellipse(0, -size * 0.28, size * 0.25, size * 0.4, 0, 0, TAU);
-    ctx.fill();
-    ctx.fillStyle = `rgba(238,255,150,${0.35 + 0.65 * lit})`;
-    ctx.beginPath();
-    ctx.ellipse(0, size * 0.32, size * 0.27, size * 0.36, 0, 0, TAU);
-    ctx.fill();
     ctx.restore();
   };
 
@@ -531,7 +556,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       fry.push({
         x: (fromLeft ? -length : width + length) - Math.sign(pace) * one * unit * 1.1,
         y: y + (one ? random(-0.7, 0.7) * unit : 0),
-        length, vx: pace, vy: 0, phase: random(0, TAU), hush: 0,
+        length, vx: pace, vy: 0, phase: random(0, TAU), hush: 0, mouth: 0,
       });
     }
   };
@@ -550,10 +575,6 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       spin: random(0.5, 1) * turn * pick([-1, 1]),
     });
   };
-  const addGift = () => {
-    const x = random(0.15, 0.85) * width;
-    gifts.push({ kind: pick(Object.keys(GIFTS)), x, at: x, y: -giftSize * 1.5, sink: reach * 0.12 * random(0.8, 1.3), phase: random(0, TAU) });
-  };
   // A hook comes down anywhere, well apart from another that is down, hangs there for ten to twenty seconds
   // and goes up again.
   const addHook = () => {
@@ -563,23 +584,22 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     do x = random(rim, width - rim); while (++tries < 8 && hooks.some((one) => Math.abs(one.x - x) < hookReach * 3));
     hooks.push({ x, y: -hookSize * 2, toY: y, pace: (y + hookSize * 2) / 1.2, wait: random(10, 20), armed: 0 });
   };
-  // A firefly falls into the water and sinks slowly, still glowing.
-  const addFly = () => {
+  // A bug falls into the water and sinks slowly: a firefly still glowing, a beetle or a caterpillar a little faster.
+  const addBug = (kind) => {
     const x = random(0.08, 0.92) * width;
-    flies.push({ x, at: x, y: -flySize, sink: reach * random(0.06, 0.1), phase: random(0, TAU) });
+    bugs.push({ kind, x, at: x, y: -bugSize, sink: reach * (kind === 'firefly' ? random(0.06, 0.1) : random(0.09, 0.14)), phase: random(0, TAU) });
   };
-  // The fish eats a firefly it reaches: the points come at once, the firefly goes into its mouth.
-  const eat = (fly) => {
-    fly.eaten = 0;   // seconds since
-    score += FIREFLY;
-    notes.push({ text: `+${FIREFLY}`, x: fly.at, y: fly.y - unit * 0.6, life: 1.1 });
-    playEffect('chime', fly.at);
-  };
-  const take = (gift) => {
-    powers[gift.kind] = GIFTS[gift.kind].seconds;
-    notes.push({ text: words[gift.kind], x: me.x, y: me.y - unit, life: 1.5 });
-    pop(me.x, me.y, 8, 90, 120);
-    playEffect('chime', me.x);
+  // The fish eats a bug it reaches. What the bug gives comes at once; the bug itself goes into its mouth.
+  const eat = (bug) => {
+    const { points, power } = BUGS[bug.kind];
+    bug.eaten = 0;   // seconds since
+    score += points;
+    if (power) {
+      powers[power] = POWERS[power].seconds;
+      pop(me.x, me.y, 8, 90, 120);
+    }
+    notes.push({ text: power ? `${words[power]} +${points}` : `+${points}`, x: bug.at, y: bug.y - unit * 0.6, life: power ? 1.5 : 1.1 });
+    playEffect('chime', bug.at);
   };
 
   // ---- Meetings ----
@@ -669,8 +689,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     const dt = Math.min((now - last) / 1000 || 0, 0.05);   // a hidden tab or a slow frame does not jump the game ahead
     last = now;
     const hard = time / RAMP;
-    const drift = dt * (state === 'play' && powers.slow > 0 ? 0.45 : 1);   // what the water and the things in it get of this frame
-    clock += drift;
+    clock += dt;
 
     if (state === 'play') {
       time += dt;
@@ -693,8 +712,8 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
           untilCurrent = random(13, 22);
         }
       }
-      push.x += (flow.x * flow.force * reach * 0.14 - push.x) * Math.min(dt * 3.5, 1);
-      push.y += (flow.y * flow.force * reach * 0.14 - push.y) * Math.min(dt * 3.5, 1);
+      push.x += (flow.x * flow.force * reach * 0.28 - push.x) * Math.min(dt * 4, 1);
+      push.y += (flow.y * flow.force * reach * 0.28 - push.y) * Math.min(dt * 4, 1);
 
       const swim = reach * 1.1 * dt;
       if (keys.has('left')) me.toX -= swim;
@@ -718,7 +737,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       me.y += moveY;
       if (Math.abs(moveX) > 0.6) me.facing = Math.sign(moveX);
       me.tilt = mix(me.tilt, clamp(moveY / (dt || 1) / (unit * 15), -0.5, 0.5), 0.2);
-      me.size = mix(me.size, powers.small > 0 ? 0.55 : 1, Math.min(dt * 8, 1));
+      me.size = mix(me.size, powers.small > 0 ? SMALL : 1, Math.min(dt * 8, 1));
 
       // A fish that swims leaves a small bubble behind it now and then.
       trail += Math.hypot(moveX, moveY);
@@ -727,8 +746,8 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
         pops.push({ x: me.x - me.facing * unit * 0.5 * me.size, y: me.y + random(-3, 3), vx: random(-6, 6), vy: -random(14, 30), size: random(1.3, 2.8), life: random(0.5, 0.9) });
       }
 
-      // It opens its mouth for a firefly that is close, and swallows after one.
-      const snack = flies.some((fly) => fly.eaten === undefined && Math.hypot(fly.at - me.x, fly.y - me.y) < unit * 1.6);
+      // It opens its mouth for a bug that is close, and swallows after one.
+      const snack = bugs.some((bug) => bug.eaten === undefined && Math.hypot(bug.at - me.x, bug.y - me.y) < unit * 1.6);
       me.mouth += ((snack ? 0.8 : 0) - me.mouth) * Math.min(dt * 16, 1);
       me.gulp = Math.max(0, me.gulp - dt);
 
@@ -743,30 +762,30 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       // More of everything as the time passes, and much more once the ramp is over. The taller the water is
       // beside the fish, the more fish it takes to fill it as well.
       const late = Math.max(0, hard - 1);
-      sinceFish += drift;
+      sinceFish += dt;
       if (sinceFish > mix(0.5, 0.17, Math.min(hard, 1) ** 0.8) / (1 + late * 6) * clamp(14 * unit / floor, 0.5, 1.5)) {
         sinceFish = 0;
         addFish(hard);
       }
-      untilFry -= drift;
+      untilFry -= dt;
       if (untilFry <= 0) {
         untilFry = random(1.4, 3) / (1 + Math.min(hard, 2));
         addFry(hard);
       }
-      untilJunk -= drift;
+      untilJunk -= dt;
       if (untilJunk <= 0) {
         untilJunk = random(0.75, 1.3) * mix(12, 6, Math.min(hard, 1)) / (1 + late * 2);
         addJunk(hard);
       }
-      untilGift -= dt;
-      if (untilGift <= 0) {
-        untilGift = random(34, 58);
-        addGift();
-      }
       untilFly -= dt;
       if (untilFly <= 0) {
         untilFly = random(7, 14);
-        addFly();
+        addBug('firefly');
+      }
+      untilTreat -= dt;
+      if (untilTreat <= 0) {
+        untilTreat = random(34, 58);
+        addBug(pick(['beetle', 'caterpillar']));
       }
       scoreText.textContent = Math.floor(score);
     } else {
@@ -774,8 +793,8 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     }
 
     // Everything keeps moving after the fish is gone; nothing new comes.
-    const carryX = flow.x * flow.force * reach * 0.1 * dt;   // the current takes the light things with it
-    const carryY = flow.y * flow.force * reach * 0.1 * dt;
+    const carryX = flow.x * flow.force * reach * 0.2 * dt;   // the current takes the light things with it
+    const carryY = flow.y * flow.force * reach * 0.2 * dt;
     for (const other of others) {
       if (other !== ending?.who) {
         // A fish that has the player right in front of its nose turns on it and opens its mouth.
@@ -783,40 +802,38 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
         const gap = Math.hypot(me.x - (other.x + way * other.length * 0.5), me.y - other.at);
         const hunts = state === 'play' && powers.shield <= 0 && way * (me.x - other.x) > 0 && gap < unit * 0.9 + other.length * 0.12;
         const climb = hunts ? clamp((me.y - other.at) / (unit * 0.5), -1, 1) * 0.5 : 0;   // as a share of its speed
-        other.y += climb * Math.abs(other.speed) * drift;
+        other.y += climb * Math.abs(other.speed) * dt;
         other.tilt += (Math.atan(climb) - other.tilt) * Math.min(dt * 10, 1);
         other.mouth += ((hunts ? 0.75 : 0) - other.mouth) * Math.min(dt * 14, 1);
       }
-      other.x += other.speed * drift;
+      other.x += other.speed * dt;
       other.at = other.y + Math.sin(clock * other.beat + other.phase) * other.weave;
     }
     for (const small of fry) {
-      small.x += small.vx * drift + carryX;
-      small.y += small.vy * drift + carryY;
+      // While the fish is small enough for them, they open their mouths at it as the bigger fish do.
+      const bites = state === 'play' && powers.small > 0 && powers.shield <= 0 && Math.hypot(small.x - me.x, small.y - me.y) < unit * 1.4;
+      small.mouth += ((bites ? 0.7 : 0) - small.mouth) * Math.min(dt * 14, 1);
+      small.x += small.vx * dt + carryX;
+      small.y += small.vy * dt + carryY;
       small.vy *= Math.exp(-dt * 1.5);
       small.hush -= dt;
     }
     for (const item of junk) {
       if (item !== ending?.who) item.x += carryX;
-      item.y += item.fall * drift + carryY;
-      item.turn += item.spin * drift;
+      item.y += item.fall * dt + carryY;
+      item.turn += item.spin * dt;
     }
-    for (const gift of gifts) {
-      gift.x += carryX;
-      gift.y += gift.sink * dt + carryY;
-      gift.at = gift.x + Math.sin(clock * 1.3 + gift.phase) * unit * 0.5;   // it sways as it sinks
-    }
-    for (const fly of flies) {
-      if (fly.eaten === undefined) {
-        fly.x += carryX;
-        fly.y += fly.sink * dt + carryY;
-        fly.at = fly.x + Math.sin(clock * 2.3 + fly.phase) * unit * 0.35;   // it struggles from side to side
+    for (const bug of bugs) {
+      if (bug.eaten === undefined) {
+        bug.x += carryX;
+        bug.y += bug.sink * dt + carryY;
+        bug.at = bug.x + Math.sin(clock * 2.3 + bug.phase) * unit * 0.35;   // it struggles from side to side
       } else {
-        fly.eaten += dt;
-        fly.at += (me.x + me.facing * unit * me.size * 0.36 - fly.at) * Math.min(dt * 22, 1);
-        fly.y += (me.y - fly.y) * Math.min(dt * 22, 1);
-        if (fly.eaten >= 0.14 && !fly.gone) {
-          fly.gone = true;
+        bug.eaten += dt;
+        bug.at += (me.x + me.facing * unit * me.size * 0.36 - bug.at) * Math.min(dt * 22, 1);
+        bug.y += (me.y - bug.y) * Math.min(dt * 22, 1);
+        if (bug.eaten >= 0.14 && !bug.gone) {
+          bug.gone = true;
           me.gulp = 0.22;
         }
       }
@@ -824,13 +841,13 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     for (const one of hooks) {
       if (one === ending?.who) continue;
       if (one.wait > 0 && one.y < one.toY) {
-        one.y = Math.min(one.y + one.pace * drift, one.toY);
+        one.y = Math.min(one.y + one.pace * dt, one.toY);
       } else if (one.wait > 0) {
-        one.wait -= drift;
-        one.armed = Math.min(1, one.armed + drift / 0.35);
+        one.wait -= dt;
+        one.armed = Math.min(1, one.armed + dt / 0.35);
       } else {
-        one.y -= height * 0.9 * drift;
-        one.armed = Math.max(0, one.armed - drift / 0.25);
+        one.y -= height * 0.9 * dt;
+        one.armed = Math.max(0, one.armed - dt / 0.25);
       }
     }
     for (const bubble of pops) {
@@ -844,19 +861,22 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     }
 
     if (state === 'play') {
-      for (const gift of gifts) {
-        if (near(gift.at, gift.y, giftSize * 1.15)) {
-          take(gift);
-          gift.taken = true;
-        }
+      for (const bug of bugs) {
+        if (bug.eaten === undefined && near(bug.at, bug.y, bug.kind === 'firefly' ? flySize : bugSize * 0.8)) eat(bug);
       }
-      for (const fly of flies) {
-        if (fly.eaten === undefined && near(fly.at, fly.y, flySize)) eat(fly);
-      }
+      let eater = null;   // a small one that has reached the fish while the fish is smaller still
       for (const small of fry) {
-        if (small.hush <= 0 && brushes(small)) bump(small);
+        if (small.hush > 0 || !brushes(small)) continue;
+        if (powers.small > 0 && powers.shield <= 0) eater ??= small;
+        else bump(small);
       }
-      if (powers.shield <= 0) {
+      if (eater) {
+        // It swallows the fish as a bigger one would, so it joins them for what follows.
+        const fish = { x: eater.x, y: eater.y, at: eater.y, length: eater.length, speed: eater.vx, weave: 0, beat: 1, phase: eater.phase, shade: 0.5, tilt: 0, mouth: eater.mouth };
+        fry = fry.filter((small) => small !== eater);
+        others.push(fish);
+        endBy('fish', fish);
+      } else if (powers.shield <= 0) {
         const fish = others.find(meets);
         const item = fish ? null : junk.find((thing) => near(thing.x, thing.y, thing.size * JUNK[thing.kind].hit));
         const caught = fish || item ? null : hooks.find((one) => one.armed > 0 && near(one.x, one.y, hookReach * one.armed));
@@ -874,8 +894,8 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       const lunge = 1 - (1 - clamp(ending.age / 0.26, 0, 1)) ** 3;
       const gulp = clamp((ending.age - 0.26) / 0.24, 0, 1);
       const settle = clamp((ending.age - 0.5) / 0.3, 0, 1);
-      who.length = mix(from.length, Math.max(from.length * 1.12, unit * 1.9), lunge);
-      who.x = mix(from.x, at.x + face * (unit * 0.1 - who.length * 0.5), lunge);
+      who.length = mix(from.length, Math.max(from.length * 1.12, unit * me.size * 1.9), lunge);
+      who.x = mix(from.x, at.x + face * (unit * me.size * 0.1 - who.length * 0.5), lunge);
       who.y = mix(from.y, at.y, lunge);
       who.at = who.y;
       who.speed = face * 0.001;   // it stays where it is, facing the fish
@@ -939,8 +959,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     others = others.filter((other) => other.x > -other.length * 1.5 && other.x < width + other.length * 1.5);
     fry = fry.filter((small) => small.x > -unit * 5 && small.x < width + unit * 5 && small.y > -unit && small.y < height + unit);
     junk = junk.filter((item) => item.y < height + item.size * 1.5);
-    gifts = gifts.filter((gift) => !gift.taken && gift.y < height + giftSize * 2);
-    flies = flies.filter((fly) => !fly.gone && fly.y < floor + unit * 0.3);
+    bugs = bugs.filter((bug) => !bug.gone && bug.y < floor + unit * 0.3);
     hooks = hooks.filter((one) => one.wait > 0 || one.y > -hookSize * 3);
     pops = pops.filter((bubble) => bubble.life > 0);
     notes = notes.filter((note) => note.life > 0);
@@ -949,12 +968,12 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     ctx.clearRect(0, 0, width, height);
     ctx.lineCap = 'round';
     if (flow.force > 0.01) {
-      ctx.strokeStyle = `rgba(255,255,255,${0.26 * flow.force})`;
+      ctx.strokeStyle = `rgba(255,255,255,${0.34 * flow.force})`;
       ctx.lineWidth = 2;
       ctx.beginPath();
       for (const streak of streaks) {
-        streak.x = (streak.x + flow.x * streak.pace * dt * 0.9 + 1) % 1;
-        streak.y = (streak.y + flow.y * streak.pace * dt * 0.9 + 1) % 1;
+        streak.x = (streak.x + flow.x * streak.pace * dt * 1.5 + 1) % 1;
+        streak.y = (streak.y + flow.y * streak.pace * dt * 1.5 + 1) % 1;
         ctx.moveTo(streak.x * width, streak.y * height);
         ctx.lineTo(streak.x * width - flow.x * streak.long * reach, streak.y * height - flow.y * streak.long * reach);
       }
@@ -974,7 +993,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     const taker = ending?.kind === 'fish' ? ending.who : null;
     for (const small of fry) {
       drawFish(small.x, small.y, small.length, Math.sign(small.vx), 'rgba(255,255,255,0.5)',
-        { wag: Math.sin(clock * 13 + small.phase) * 7, tilt: clamp(small.vy / (Math.abs(small.vx) || 1), -0.6, 0.6) });
+        { wag: Math.sin(clock * 13 + small.phase) * 7, tilt: clamp(small.vy / (Math.abs(small.vx) || 1), -0.6, 0.6), mouth: small.mouth });
     }
     for (const other of others) {
       if (other === taker) continue;
@@ -987,8 +1006,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
     const ringed = ending?.kind === 'junk' && ending.who.kind === 'tyre';
     if (ringed) drawMe();
     for (const item of junk) drawJunk(item);
-    for (const gift of gifts) drawGift(gift);
-    for (const fly of flies) drawFly(fly);
+    for (const bug of bugs) drawBug(bug);
     for (const one of hooks) drawHook(one);
     if (!ringed) drawMe();
     if (taker) {
@@ -997,7 +1015,7 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
         `rgba(255,255,255,${taker.shade})`, { wag: Math.sin(now / 60) * 5, tilt: taker.tilt, mouth: taker.mouth, squash: ending.squash });
     }
 
-    // What is helping right now: the bubble round the fish, and a ring for each gift that runs down with it.
+    // What is helping right now: the bubble round the fish, and a ring for each help that runs down with it.
     if (state === 'play') {
       if (powers.shield > 0 && (powers.shield > 1.2 || Math.sin(now / 60) > 0)) {
         ctx.fillStyle = 'rgba(191,230,255,0.14)';
@@ -1011,10 +1029,10 @@ export function dive({ playEffect = () => {}, reducedMotion = false } = {}) {
       let ring = 0;
       for (const [kind, left] of Object.entries(powers)) {
         if (left <= 0) continue;
-        ctx.strokeStyle = GIFTS[kind].colour;
+        ctx.strokeStyle = POWERS[kind].colour;
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(me.x, me.y, unit * (0.95 + 0.13 * ring++), -Math.PI / 2, -Math.PI / 2 + TAU * left / GIFTS[kind].seconds);
+        ctx.arc(me.x, me.y, unit * (0.95 + 0.13 * ring++), -Math.PI / 2, -Math.PI / 2 + TAU * left / POWERS[kind].seconds);
         ctx.stroke();
       }
     }
