@@ -348,8 +348,10 @@ html:lang(en) .lang:hover .flag--en, html:lang(lt) .lang:hover .flag--lt { backg
                   background: repeating-linear-gradient(104deg, transparent 0, #fff 5vw, transparent 10vw 16vw,
                                                         #fff 18.5vw, transparent 21vw 33vw);
                   -webkit-mask: linear-gradient(transparent, #000 26%, transparent); mask: linear-gradient(transparent, #000 26%, transparent); }
-/* A whale passes far below. */
-.depths::after { content: ""; position: absolute; z-index: -1; top: 58%; left: 22%; width: min(96vw, 940px); aspect-ratio: 1000 / 400;
+/* A whale passes far below. Like the fish further down, it starts from the edge of the screen and crosses it
+   (see Motion); its transform here is where it rests when nothing moves. */
+.depths::after { content: ""; position: absolute; z-index: -1; top: 58%; left: 0; width: min(96vw, 940px); aspect-ratio: 1000 / 400;
+                 transform: translateX(22vw);
                  pointer-events: none; background: var(--deep-3); opacity: 0.55; -webkit-mask: var(--art-whale) 0 0 / 100% 100% no-repeat; mask: var(--art-whale) 0 0 / 100% 100% no-repeat; }
 
 /* ---- Berth list: a grid of plaques on the home page, a row of plates on an app page ---- */
@@ -417,8 +419,11 @@ body:not([data-berth="0"]) .berth[aria-current="page"] strong { text-decoration:
 /* Fish pass behind the text; where the browser can, they swim as the page scrolls (see the end of this file). */
 .content::before, .content::after { content: ""; position: absolute; z-index: -1; aspect-ratio: 52 / 22; pointer-events: none;
                                     background: rgba(255,255,255,.17); -webkit-mask: var(--art-fish) 0 0 / 100% 100% no-repeat; mask: var(--art-fish) 0 0 / 100% 100% no-repeat; }
-.content::before { top: 7%; left: -8vw; width: clamp(170px, 24vw, 340px); }
-.content::after { top: 62%; right: -6vw; width: clamp(130px, 17vw, 250px); scale: -1 1; opacity: 0.7; }
+/* The text column is centred, so its own edge is brought back to the edge of the screen. The second school is
+   mirrored: it faces left, and what moves it right in its own terms moves it left on the screen. */
+.content::before { top: 7%; left: min(0px, 380px - 50vw); width: clamp(170px, 24vw, 340px); transform: translateX(6vw); }
+.content::after { top: 62%; right: min(0px, 380px - 50vw); width: clamp(130px, 17vw, 250px); scale: -1 1; opacity: 0.7;
+                  transform: translateX(4vw); }
 
 /* The sea bed: two rows of dunes, the weed that grows out of each, and the contact line resting above them.
    The weed is a picture of its own (.weed, two rows after the footer), laid over the dunes of its row in the
@@ -456,6 +461,12 @@ footer::after { z-index: 1; -webkit-mask: var(--art-seabed) 85% 100% / auto 100%
   .glitter--alt { animation-direction: alternate-reverse; }
   .lang { animation: sway 7s ease-in-out infinite alternate; }
   .weed { animation: lean 9s ease-in-out infinite alternate; }
+  /* The fish and the whale swim across the screen and come back in from the other side. Each one leaves
+     completely first and stays out of sight for a while, so its head and its tail are never on the screen at
+     opposite edges. They start part of the way across. */
+  .content::before { animation: cross 90s linear -35s infinite; }
+  .content::after { animation: cross 125s linear -80s infinite; }
+  .depths::after { animation: cross-back 170s linear -70s infinite; }
   .weed--near { animation-duration: 7s; animation-delay: -3s; }
   .gull { left: -8em; animation: fly var(--t) linear var(--d) infinite, soar 9s ease-in-out var(--d) infinite alternate,
                                  flap var(--w) ease-in-out var(--d) infinite; }
@@ -464,7 +475,8 @@ footer::after { z-index: 1; -webkit-mask: var(--art-seabed) 85% 100% / auto 100%
   .hero.is-offscreen :is(.drift, .flow, .gull, .glitter, .lang, .buoy), .hero.is-offscreen :is(.lamp, .layer--stars > .shift)::after,
   .hero.is-offscreen .layer--surf > .shift::before,
   .is-paused :is(.drift, .flow, .gull, .glitter, .lang, .buoy, .weed), .is-paused :is(.lamp, .layer--stars > .shift)::after,
-  .is-paused .layer--surf > .shift::before { animation-play-state: paused; }
+  .is-paused .layer--surf > .shift::before, .is-paused .depths::after, .is-paused .content::before,
+  .is-paused .content::after { animation-play-state: paused; }
 
   /* Touch devices have no pointer shift, so the layers need no spare width. */
   @media (hover: none) { .hero { --pad: 0px; } }
@@ -479,9 +491,11 @@ footer::after { z-index: 1; -webkit-mask: var(--art-seabed) 85% 100% / auto 100%
     body[data-berth="0"] .berth, .facts li, .download, .content h2 {
       animation: surface linear both; animation-timeline: view(); animation-range: entry 0% entry 80%; }
     .depths::before { animation: rays linear both; animation-timeline: scroll(root); }
-    .depths::after { animation: whale linear both; animation-timeline: view(); }
-    .content::before { animation: swim linear both; animation-timeline: view(); }
-    .content::after { animation: swim-back linear both; animation-timeline: view(); }
+    /* Scrolling shifts the fish and the whale as well (translate), on top of their own swimming (transform). */
+    .depths::after { animation: whale linear both, cross-back 170s linear -70s infinite; animation-timeline: view(), auto; }
+    .content::before { animation: swim linear both, cross 90s linear -35s infinite; animation-timeline: view(), auto; }
+    .content::after { animation: swim-back linear both, cross 125s linear -80s infinite; animation-timeline: view(), auto; }
+    .is-paused .depths::after, .is-paused .content::before, .is-paused .content::after { animation-play-state: running, paused; }
     footer::before { animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
     .weed--far { animation: rise linear both, lean 9s ease-in-out infinite alternate; animation-timeline: view(), auto;
                  animation-range: entry 0% entry 100%, normal; }
@@ -507,9 +521,12 @@ footer::after { z-index: 1; -webkit-mask: var(--art-seabed) 85% 100% / auto 100%
 @keyframes scroll-fade { to { opacity: 0; } }
 @keyframes surface { from { opacity: 0; translate: 0 2.4rem; } }
 @keyframes rays { to { translate: -9vw 0; } }
-@keyframes whale { from { translate: 62% 14%; } to { translate: -100% -14%; } }
-@keyframes swim { from { translate: -14vw 30%; } to { translate: 62vw -30%; } }
-@keyframes swim-back { from { translate: 12vw -20%; } to { translate: -58vw 30%; } }
+@keyframes whale { from { translate: 14% 14%; } to { translate: -14% -14%; } }
+@keyframes swim { from { translate: -16vw 30%; } to { translate: 16vw -30%; } }
+@keyframes swim-back { from { translate: 16vw -20%; } to { translate: -16vw 30%; } }
+/* From out of sight on one side to out of sight on the other: 18vw to spare covers the shift that scrolling adds. */
+@keyframes cross { from { transform: translateX(calc(-100% - 18vw)); } to { transform: translateX(118vw); } }
+@keyframes cross-back { from { transform: translateX(118vw); } to { transform: translateX(calc(-100% - 18vw)); } }
 @keyframes rise { from { translate: 0 40%; } }
 
 @media (prefers-reduced-motion: reduce) {

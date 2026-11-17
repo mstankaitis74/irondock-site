@@ -427,6 +427,17 @@
         { duration: random(500, 900), delay: random(0, 250) });
     }
   };
+  // At night a star falls by itself now and then: one every five to ten minutes, anywhere in the sky, without
+  // a sound. It skips its turn while nobody can see it: the tab is hidden, the scene is scrolled away or paused.
+  const waitForStar = () => setTimeout(() => {
+    const unseen = document.hidden || !heroVisible || root.classList.contains('is-paused');
+    if (!reducedMotion && !unseen && ['night', undefined].includes(root.dataset.sky)) {
+      fallingStar(random(0.1, 0.9) * hero.offsetWidth, random(8, 34) * hero.offsetHeight / 100);
+    }
+    waitForStar();
+  }, random(5, 10) * 60000);
+  waitForStar();
+
   const startledGull = (x, y) => {
     const em = hero.offsetHeight / 100;
     const gull = spawn(heroFx, 'fx-gull', x, y, 1.1, [
