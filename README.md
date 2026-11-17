@@ -8,6 +8,7 @@ Irondock website, served by GitHub Pages at https://irondock.dev.
 - `dock.css`, `dock.js` – shared styles, the harbour scene, parallax, and travel between berths without a page reload. The scene's artwork lives in `dock.css` (the `--art-*` values near the top: small SVGs written as data URIs), so the whole scene arrives with the stylesheet
 - `sound/` – quiet sea sounds, one seamless loop per time of day (made with ElevenLabs). The sound is on when the page opens, at a tenth of the volume slider (a browser lets it be heard from the visitor's first click, tap or key press); the sound button turns it off, and that choice is remembered. `plop`, `bell`, `bubbles`, `gull` and `chime` are the short sounds that answer a click on the water, a buoy, the page under the surface, the day sky and the night sky
 - `robots.txt`, `sitemap.xml`, `og.png`, `favicon.svg` – search engines and link previews
+- Visits are counted by Cloudflare Web Analytics (no cookies): its snippet is the last script on every page, and the numbers are in the Cloudflare dashboard under Web Analytics.
 - `beatsy/privacy/index.html` – Beatsy privacy policy (copy of `C:\programming\beatsy\application\androidApp\src\main\assets\privacy-policy.html`; update both together)
 - `CNAME` – custom domain for GitHub Pages
 - `app-ads.txt` – add here once the AdMob account exists
