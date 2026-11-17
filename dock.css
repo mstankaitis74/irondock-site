@@ -278,6 +278,15 @@ a.mark:hover .lamp::after, .mark.is-hot .lamp::after { opacity: 0.9; animation: 
 .hero-text { position: relative; z-index: 2; max-width: 1160px; margin: 0 auto; padding: calc(var(--u) * 6.4) 20px 0;
              font-size: 16px; pointer-events: none; will-change: transform, opacity; }
 .hero-text a { color: inherit; pointer-events: auto; }
+/* A patch of clear sky behind the title: clouds and stars thin out as they pass it instead of running through
+   the words. It is painted with the hero's own sky gradient, so it shows only in what it covers. */
+.hero-text::before { content: ""; position: absolute; z-index: -1; top: 0; bottom: calc(var(--u) * -6); left: -80px;
+                     width: min(100vw + 240px, 860px); opacity: 0.85;
+                     background: linear-gradient(var(--sky-1) 0, var(--sky-2) calc(var(--hero-h) * 0.32), var(--sky-3) calc(var(--hero-h) * 0.56));
+                     -webkit-mask: linear-gradient(to right, transparent, #000 80px, #000 calc(100% - 160px), transparent),
+                           linear-gradient(#000 calc(100% - var(--u) * 6), transparent); mask: linear-gradient(to right, transparent, #000 80px, #000 calc(100% - 160px), transparent),
+                           linear-gradient(#000 calc(100% - var(--u) * 6), transparent);
+                     -webkit-mask-composite: source-in; mask-composite: intersect; }
 h1 { font-size: clamp(40px, min(12vw, var(--u) * 12.6), 104px); line-height: 1; font-weight: 800; letter-spacing: -0.02em;
      margin: 0 0 calc(var(--u) * 1.6); max-width: calc(100% - 76px);   /* a long name wraps before it reaches the flags */ }
 .lead { color: var(--hero-muted); font-size: clamp(16px, var(--u) * 2.9, 23px); line-height: 1.4; margin: 0; max-width: 44ch; }
