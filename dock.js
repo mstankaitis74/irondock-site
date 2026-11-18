@@ -730,7 +730,9 @@
   };
 
   let latestVisit = 0;
-  const visit = async (url, push) => {
+  // `wait` is how long the old words get to fade before the new ones are put in their place. A finger that
+  // has dragged the scene to the berth has `carried` the camera there itself (see "Swipe between berths").
+  const visit = async (url, push, wait = 250, carried = false) => {
     const visitId = ++latestVisit;
     let next;
     try {
@@ -748,11 +750,13 @@
     if (scrollY > 0) scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
 
     // A longer trip along the pier takes a little longer, so the scene never becomes a blur.
-    const distance = Math.abs(berth - hero.style.getPropertyValue('--cam'));
-    hero.style.setProperty('--travel', `${Math.min(1.1 + 0.3 * distance, 2.6)}s`);
-    hero.style.setProperty('--cam', berth);
+    if (!carried) {
+      const distance = Math.abs(berth - hero.style.getPropertyValue('--cam'));
+      hero.style.setProperty('--travel', `${Math.min(1.1 + 0.3 * distance, 2.6)}s`);
+      hero.style.setProperty('--cam', berth);
+    }
     document.body.classList.add('is-swapping');
-    await new Promise((resolve) => setTimeout(resolve, reducedMotion ? 0 : 250));
+    await new Promise((resolve) => setTimeout(resolve, reducedMotion ? 0 : wait));
     if (visitId !== latestVisit) return;
 
     const swap = (attribute) => document.querySelectorAll(`[${attribute}]`).forEach((region) => {
@@ -806,41 +810,53 @@
   let drag = null;
   let draggedAt = 0;
 
-  // While the finger is down each layer is moved directly; letting go hands the camera back to --cam,
-  // and the layers glide from where the finger left them to the berth.
+  // While the finger is down each layer is moved directly, and when it lets go the layers glide on to the
+  // berth by themselves: the glide begins at the speed the finger had (the first handle of its curve) and
+  // slows down from there, so the scene neither lurches nor stalls at that moment. Only the layers are touched
+  // until they have arrived. --cam, which every element of the scene inherits, is set after that: setting it
+  // makes the browser go through the whole scene again, and that is what used to hold the glide up.
+  let settling = 0;
+  let arrive = null;
   const follow = (cam) => {
     for (const layer of layers) layer.element.style.translate = `${(-cam * layer.pan * drag.step).toFixed(1)}px 0`;
   };
-  const settle = (cam) => {
-    hero.classList.remove('is-dragging');
-    hero.classList.add('is-settling');
-    hero.style.setProperty('--cam', cam);
-    for (const layer of layers) layer.element.style.translate = '';
-    setTimeout(() => hero.classList.remove('is-settling'), 500);
+  const settle = (cam, time, slope) => {
+    for (const layer of layers) layer.element.style.transition = `translate ${Math.round(time)}ms cubic-bezier(0.25, ${(0.25 * slope).toFixed(3)}, 0.3, 1)`;
+    follow(cam);
+    arrive = () => {
+      clearTimeout(settling);
+      arrive = null;
+      hero.classList.remove('is-dragging');
+      hero.style.setProperty('--cam', cam);
+      for (const layer of layers) layer.element.style.translate = layer.element.style.transition = '';
+    };
+    settling = setTimeout(arrive, time + 60);
   };
 
   hero.addEventListener('pointerdown', (event) => {
     // A finger on the volume slider is moving the slider, not the scene.
     if (event.pointerType === 'mouse' || !event.isPrimary || event.target.closest('.volume')) return;
+    arrive?.();   // a glide still on its way ends where it was going
     drag = {
-      id: event.pointerId, startX: event.clientX, startY: event.clientY, lastX: event.clientX, lastTime: event.timeStamp,
-      from: Number(document.body.dataset.berth), step: mark(1).offsetLeft - mark(0).offsetLeft, moved: 0, speed: 0, active: false,
+      id: event.pointerId, startX: event.clientX, startY: event.clientY, trail: [],
+      from: Number(hero.style.getPropertyValue('--cam')), step: mark(1).offsetLeft - mark(0).offsetLeft, moved: 0, active: false,
     };
   });
 
   addEventListener('pointermove', (event) => {
     if (!drag || event.pointerId !== drag.id) return;
-    const dx = event.clientX - drag.startX;
     if (!drag.active) {
       // Vertical movement is the page scrolling (touch-action: pan-y); only a sideways drag takes the scene.
+      const dx = event.clientX - drag.startX;
       if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(event.clientY - drag.startY)) return;
       drag.active = true;
+      drag.startX = event.clientX;   // the scene sets off from where it stands instead of jumping after the finger
       hero.classList.add('is-dragging');
     }
-    drag.speed = (event.clientX - drag.lastX) / Math.max(event.timeStamp - drag.lastTime, 1);   // px per ms
-    drag.lastX = event.clientX;
-    drag.lastTime = event.timeStamp;
-    drag.moved = -dx / drag.step;   // in berths; positive = towards the next berth
+    // Where the finger has been in the last tenth of a second: its speed at the moment it lets go.
+    drag.trail.push({ x: event.clientX, time: event.timeStamp });
+    while (event.timeStamp - drag.trail[0].time > 100) drag.trail.shift();
+    drag.moved = -(event.clientX - drag.startX) / drag.step;   // in berths; positive = towards the next berth
     // The scene stops at the first and the last berth: the layers end there, and a finger that pulls
     // further would drag their edges into view.
     follow(Math.min(Math.max(drag.from + drag.moved, 0), lastBerth));
@@ -848,18 +864,26 @@
 
   const endDrag = (event) => {
     if (!drag || event.pointerId !== drag.id) return;
-    const { active, from, moved, speed } = drag;
+    const { active, from, moved, step, trail } = drag;
     if (!active) {
       drag = null;
       return;
     }
     draggedAt = event.timeStamp;
-    const flick = Math.abs(speed) > 0.5 && Math.sign(-speed) === Math.sign(moved);
+    // Berths per millisecond, positive towards the next berth; nothing if the finger had come to rest.
+    const [first, last] = [trail[0], trail.at(-1)];
+    const speed = last.time > first.time && event.timeStamp - last.time < 60 ? -(last.x - first.x) / (last.time - first.time) / step : 0;
+    const flick = Math.abs(speed) * step > 0.5 && Math.sign(speed) === Math.sign(moved);
     const travel = event.type === 'pointerup' && (Math.abs(moved) > 0.25 || flick) ? Math.sign(moved) : 0;
     const target = Math.min(Math.max(from + travel, 0), lastBerth);
-    settle(target);
+    const left = target - Math.min(Math.max(from + moved, 0), lastBerth);   // what is left of the way, in berths
+    const towards = Math.max(speed * Math.sign(left), 0);
+    // Slowing down evenly from the finger's speed takes twice the way divided by that speed.
+    const time = reducedMotion ? 0 : Math.min(Math.max(towards ? 2 * Math.abs(left) / towards : 450, 260), 620);
+    settle(target, time, left && time ? Math.min(towards * time / Math.abs(left), 3.4) : 0);
     drag = null;
-    if (target !== from) visit(mark(target).href, true);
+    // The words change once the scene has arrived: putting them in is work too.
+    if (target !== from) visit(mark(target).href, true, time + 40, true);
   };
   addEventListener('pointerup', endDrag);
   addEventListener('pointercancel', endDrag);
