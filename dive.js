@@ -19,19 +19,20 @@ const WORDS = {
     name: 'A game under the water',
     hint: 'Steer with the mouse or the arrow keys. Keep clear of bigger fish, junk and hooks. Small fish and fireflies are safe to eat; other bugs pay more but hurt.',
     touch: 'Hold a finger down and drag: the fish swims that way. Keep clear of bigger fish, junk and hooks. Small fish and fireflies are safe to eat; other bugs pay more but hurt.',
-    score: 'Score', best: 'Best', newBest: 'New best!', died: 'You died',
+    score: 'Score', best: 'Best', newBest: 'New best!', died: 'You died', letters: 'Your three letters',
     again: 'Again', leave: 'Leave', close: 'Leave the game (Esc)',
   },
   lt: {
     name: 'Žaidimas po vandeniu',
     hint: 'Valdyk pele arba rodyklėmis. Saugokis didesnių žuvų, šiukšlių ir kabliukų. Mažos žuvytės ir jonvabaliai saugūs, kiti vabalai duoda daugiau taškų, bet pakenkia.',
     touch: 'Laikyk pirštą ir tempk: žuvis plauks ta kryptimi. Saugokis didesnių žuvų, šiukšlių ir kabliukų. Mažos žuvytės ir jonvabaliai saugūs, kiti vabalai duoda daugiau taškų, bet pakenkia.',
-    score: 'Taškai', best: 'Rekordas', newBest: 'Naujas rekordas!', died: 'Tu žuvai',
+    score: 'Taškai', best: 'Rekordas', newBest: 'Naujas rekordas!', died: 'Tu žuvai', letters: 'Tavo trys raidės',
     again: 'Dar kartą', leave: 'Išeiti', close: 'Išeiti iš žaidimo (Esc)',
   },
 };
 const RAMP = 120;          // seconds from easy to nearly impossible; after that it only gets worse faster
-const BEST = 'dive-best';  // the best score of this browser tab (sessionStorage)
+const SCORES = 'dive-scores';   // where the best scores are kept: see "The ten best"
+const ROWS = 10;                // how many of them the table shows
 const TAU = Math.PI * 2;
 // What falls in alive, and what the fish gets for eating it. Every one gives points; only the firefly is
 // safe. A beetle makes the fish dizzy: it weaves about the place it is steered to. A caterpillar, worth the
@@ -82,6 +83,8 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
 <div class="dive-end" hidden>
   <strong>${words.died}</strong>
   <p></p>
+  <input class="dive-name" type="text" maxlength="3" placeholder="${words.letters}" aria-label="${words.letters}" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="done" hidden>
+  <ol class="dive-scores" hidden></ol>
   <button class="button" type="button" data-again>${words.again}</button>
   <button class="button dive-leave" type="button" data-leave>${words.leave}</button>
 </div>`;
@@ -91,6 +94,9 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
   const scoreText = box.querySelector('.dive-score b');
   const bestText = box.querySelector('.dive-best b');
   const end = box.querySelector('.dive-end');
+  const resultText = end.querySelector('p');
+  const nameBox = end.querySelector('.dive-name');
+  const scoreList = end.querySelector('.dive-scores');
 
   // The view goes down under the water, and the game's water closes over the page. The scene above rests
   // meanwhile, as it does whenever it is out of sight.
@@ -106,13 +112,86 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
   loadSounds(SOUNDS.map((name) => `dive/${name}`));
   sound('submerge', innerWidth / 2);
 
-  let best = 0;
-  try {
-    best = Number(sessionStorage.getItem(BEST)) || 0;
-  } catch {
-    // Storage is blocked: the best score lasts until the game is closed.
-  }
-  bestText.textContent = best;
+  // ---- The ten best ----
+  // A score with letters beside it is kept for good (localStorage), and there is one to a name: the better of
+  // a name's scores is the one that stands. A score without letters lasts as long as the browser tab
+  // (sessionStorage). The table is the best ten of both. Where the browser keeps nothing, it lasts until the
+  // game is closed.
+  const clean = (text) => [...String(text).normalize('NFC').toUpperCase().replace(/[^\p{L}\p{N}]/gu, '')].slice(0, 3).join('');
+  const byPoints = (one, other) => other.points - one.points;
+  const stored = (kind) => {
+    try {
+      const list = JSON.parse(window[kind].getItem(SCORES));
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return null;   // nothing can be read: what the game remembers by itself stands
+    }
+  };
+  const store = (kind, list) => {
+    try {
+      const text = JSON.stringify(list);
+      if ((window[kind].getItem(SCORES) ?? '[]') !== text) window[kind].setItem(SCORES, text);   // nothing is written for nothing
+    } catch {
+      // Kept for this game only.
+    }
+  };
+  let named = [];      // { name, points }, best first, one to a name
+  let nameless = [];   // the same without a name
+  let latest = null;   // the score of the game that has just ended, as it stands in the table
+  let before = null;   // that score, and both lists as they were when it ended: letters typed now are laid on these afresh
+  const readScores = () => {
+    // What was kept may have been written by anything: only lines that make sense are taken.
+    const counts = (one) => Number.isFinite(one.points) && one.points > 0;
+    const kept = stored('localStorage');
+    if (kept) {
+      const all = kept.filter((line) => Array.isArray(line) && typeof line[0] === 'string')
+        .map(([name, points]) => ({ name: clean(name), points: Math.floor(Number(points)) }))
+        .filter((one) => one.name && counts(one)).sort(byPoints);
+      named = all.filter((one, index) => all.findIndex((other) => other.name === one.name) === index).slice(0, ROWS);
+    }
+    const passing = stored('sessionStorage');
+    if (passing) nameless = passing.map((points) => ({ name: '', points: Math.floor(Number(points)) })).filter(counts).sort(byPoints).slice(0, ROWS);
+  };
+  const table = () => [...named, ...nameless].sort(byPoints).slice(0, ROWS);
+  // The table as the card shows it: the bigger the fish, the higher it stands, and this game's line is marked.
+  const showScores = () => {
+    const rows = table();
+    scoreList.replaceChildren(...rows.map((one, place) => {
+      const row = document.createElement('li');
+      const fish = document.createElement('i');
+      const name = document.createElement('b');
+      const points = document.createElement('span');
+      row.style.setProperty('--place', place);
+      if (one === latest) row.setAttribute('aria-current', 'true');
+      name.textContent = one.name || '···';
+      points.textContent = one.points;
+      row.append(fish, name, points);
+      return row;
+    }));
+    scoreList.hidden = !rows.length;
+    bestText.textContent = rows[0]?.points ?? 0;
+  };
+  // Puts the score of the game that has just ended into the table, under the letters typed so far or without
+  // any. A name that is in the table already keeps one line: this score takes it if it is the better one.
+  const settle = (name) => {
+    const { points } = before;
+    ({ named, nameless } = before);
+    latest = { name, points };
+    if (!points) {
+      latest = null;   // a game without a point leaves no line
+    } else if (!name) {
+      nameless = [...nameless, latest].sort(byPoints).slice(0, ROWS);
+    } else {
+      const old = named.find((one) => one.name === name);
+      if (old && old.points >= points) latest = old;
+      else named = [...named.filter((one) => one !== old), latest].sort(byPoints).slice(0, ROWS);
+    }
+    store('localStorage', named.map((one) => [one.name, one.points]));
+    store('sessionStorage', nameless.map((one) => one.points));
+    showScores();
+  };
+  readScores();
+  bestText.textContent = table()[0]?.points ?? 0;
 
   const colours = getComputedStyle(document.documentElement);
   const mine = colours.getPropertyValue('--accent').trim() || '#ff8a7a';
@@ -130,6 +209,9 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
   let flySize = 0;     // the length of a firefly
   let bugSize = 0;     // the length of a beetle; a caterpillar is nearly twice as long
   let stickReach = 0;  // how far the stick under a finger goes
+  let left = 0;        // where the game's box is in the window: the pointer is measured from there
+  let top = 0;
+  let noteFont = '';   // the letters of the points that float up
   const resize = () => {
     const ratio = Math.min(devicePixelRatio || 1, 2);
     width = box.clientWidth;
@@ -145,7 +227,9 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
     hookReach = unit * 1.35;
     flySize = Math.max(unit * 0.3, 11);
     bugSize = Math.max(unit * 0.5, 17);
-    stickReach = clamp(reach * 0.13, 40, 60);
+    stickReach = clamp(reach * 0.18, 56, 84);
+    ({ left, top } = box.getBoundingClientRect());
+    noteFont = `700 ${Math.round(clamp(unit * 0.34, 13, 18))}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
   };
   resize();
 
@@ -154,6 +238,7 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
   let time = 0;         // seconds played: how hard it is
   let clock = 0;        // seconds the water has moved: it runs on after the end, when `time` has stopped
   let score = 0;
+  let shown = 0;        // the score as the screen has it: it is written only when it changes
   let ending = null;    // what got the fish, and how far that has gone
   let others = [];      // the bigger fish
   let fry = [];         // the small ones: food at the fish's mouth, a knock from behind
@@ -212,14 +297,14 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
     Object.assign(me, { x: width * 0.25, y: floor * 0.5, toX: width * 0.25, toY: floor * 0.5, facing: 1, tilt: 0, size: 1, show: 1, spin: 0, mouth: 0, gulp: 0, chew: 0, fat: 0, dizzy: 0 });
     end.hidden = true;
     box.classList.remove('is-over');
-    scoreText.textContent = 0;
+    scoreText.textContent = shown = 0;
   };
 
   // ---- Drawing ----
   // A fish pointing right (facing 1) or left (-1): nose at +50, tail at -52, in hundredths of its length.
   // `mouth` opens its jaws (0 to 1), `squash` makes it swallow, `fat` gives it a belly, `tilt` points its nose
   // down, `spin` turns all of it.
-  const drawFish = (x, y, length, facing, fill, { tilt = 0, wag = 0, mouth = 0, squash = 0, fat = 0, spin = 0 } = {}) => {
+  const drawFish = (x, y, length, facing, fill, tilt = 0, wag = 0, mouth = 0, squash = 0, fat = 0, spin = 0) => {
     if (length <= 0.5) return;
     ctx.save();
     ctx.translate(x, y);
@@ -541,12 +626,13 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
   // ---- What the water sends ----
   // The other fish are always bigger than the player's. They get bigger, faster and more numerous as the time
   // passes; later some weave up and down, and a few come from behind.
+  const white = (shade) => `rgba(255,255,255,${shade})`;
   const addFish = (hard) => {
     const length = Math.min(unit * random(1.35, 2 + 1.3 * Math.min(hard, 2)), reach * 0.36);
     const behind = hard > 0.4 && Math.random() < 0.25 * Math.min(hard, 1);
     const pace = width * Math.min(0.2 + 0.38 * hard, 1.5) * random(0.8, 1.25) * (behind ? 0.55 : 1);
     const y = random(unit * 0.8, floor - unit * 0.6);
-    others.push({
+    const fish = {
       x: behind ? -length : width + length,
       y,
       at: y,   // where it is drawn: `y` and its weaving
@@ -556,9 +642,12 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
       beat: random(1.2, 2.2),
       phase: random(0, TAU),
       shade: random(0.45, 0.7),
+      fill: '',   // its colour, made once: white as strong as its shade
       tilt: 0,
       mouth: 0,
-    });
+    };
+    fish.fill = white(fish.shade);
+    others.push(fish);
   };
   // Small fry come alone or three together, a little quicker than the big fish.
   const addFry = (hard) => {
@@ -570,7 +659,7 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
       fry.push({
         x: (fromLeft ? -length : width + length) - Math.sign(pace) * one * unit * 1.1,
         y: y + (one ? random(-0.7, 0.7) * unit : 0),
-        length, vx: pace, vy: 0, phase: random(0, TAU), hush: 0,
+        length, vx: pace, vy: 0, phase: random(0, TAU), hush: 0, eaten: undefined, gone: false,
       });
     }
   };
@@ -604,7 +693,7 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
   // A bug falls into the water and sinks slowly: a firefly still glowing, a beetle or a caterpillar a little faster.
   const addBug = (kind) => {
     const x = random(0.08, 0.92) * width;
-    bugs.push({ kind, x, at: x, y: -bugSize, sink: reach * (kind === 'firefly' ? random(0.06, 0.1) : random(0.09, 0.14)), phase: random(0, TAU) });
+    bugs.push({ kind, x, at: x, y: -bugSize, sink: reach * (kind === 'firefly' ? random(0.06, 0.1) : random(0.09, 0.14)), phase: random(0, TAU), eaten: undefined, gone: false });
   };
   // The fish eats a bug it reaches. What the bug gives comes at once; the bug itself goes into its mouth.
   const eat = (bug) => {
@@ -662,11 +751,13 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
     finger = null;
     me.mouth = 0;
     box.classList.add('is-quiet');
-    ending = { kind, who, age: 0, at: { x: me.x, y: me.y } };
+    // Every ending has the same fields, each kind using its own, so that it is one kind of thing to the engine.
+    ending = { kind, who, age: 0, at: { x: me.x, y: me.y }, left: undefined, face: 0, was: 0, pace: 0, from: null, squash: 0, burst: false, bitten: false, hookY: 0, lift: 0 };
     if (kind === 'fish') {
       who.y = who.at;
       who.weave = 0;
       who.shade = 0.9;
+      who.fill = white(who.shade);
       Object.assign(ending, {
         face: Math.sign(me.x - who.x) || Math.sign(who.speed), was: Math.sign(who.speed), pace: Math.abs(who.speed),
         from: { x: who.x, y: who.y, length: who.length, tilt: who.tilt, mouth: who.mouth }, squash: 0, burst: false,
@@ -689,169 +780,188 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
   const finish = () => {
     state = 'over';
     const points = Math.floor(score);
-    const record = points > best;
-    if (record) {
-      best = points;
-      try {
-        sessionStorage.setItem(BEST, best);
-      } catch {
-        // Kept for this game only.
-      }
-    }
-    bestText.textContent = best;
-    end.querySelector('p').textContent = `${words.score}: ${points}. ${record ? words.newBest : `${words.best}: ${best}.`}`;
+    readScores();   // another tab may have added to them
+    const record = points > (table()[0]?.points ?? 0);
+    before = { points, named, nameless };
+    nameBox.value = '';
+    settle('');
+    nameBox.hidden = !table().includes(latest);   // letters can be put only beside a score that is in the table
+    resultText.textContent = `${words.score}: ${points}.${record ? ` ${words.newBest}` : ''}`;
     end.hidden = false;
     box.classList.add('is-over');
     end.querySelector('[data-again]').focus({ preventScroll: true });
   };
 
-  let last = 0;
-  let frame = 0;
-  const step = (now) => {
-    frame = requestAnimationFrame(step);
-    const dt = Math.min((now - last) / 1000 || 0, 0.05);   // a hidden tab or a slow frame does not jump the game ahead
-    last = now;
-    const hard = time / RAMP;
-    clock += dt;
+  // Questions asked of everything in the water every frame. They are named here once, and a list is thinned
+  // in place, so that a frame leaves nothing behind for the browser to clear away.
+  const bugNear = (bug) => bug.eaten === undefined && Math.hypot(bug.at - me.x, bug.y - me.y) < unit * 1.6;
+  const fryAhead = (small) => small.eaten === undefined && me.facing * (small.x - me.x) > 0 && Math.hypot(small.x - me.x, small.y - me.y) < unit * 1.3;
+  const junkHits = (thing) => near(thing.x, thing.y, thing.size * JUNK[thing.kind].hit);
+  const hookCatches = (one) => one.armed > 0 && near(one.x, one.y, hookReach * one.armed);
+  const fishStays = (other) => other.x > -other.length * 1.5 && other.x < width + other.length * 1.5;
+  const fryStays = (small) => !small.gone && small.x > -unit * 5 && small.x < width + unit * 5 && small.y > -unit && small.y < height + unit;
+  const junkStays = (item) => item.y < height + item.size * 1.5;
+  const bugStays = (bug) => !bug.gone && bug.y < floor + unit * 0.3;
+  const hookStays = (one) => one.wait > 0 || one.y > -hookSize * 3;
+  const lasts = (thing) => thing.life > 0;
+  const keep = (list, stays) => {
+    let kept = 0;
+    for (let index = 0; index < list.length; index++) {
+      if (stays(list[index])) list[kept++] = list[index];
+    }
+    list.length = kept;
+  };
+  const drawMe = (now) => drawFish(me.x, me.y, unit * me.size * me.show, me.facing, mine, me.tilt, Math.sin(now / (70 + 60 * me.fat)) * 6,
+    me.mouth, Math.sin(me.gulp / 0.22 * Math.PI) * 0.12, me.fat * 0.25, me.spin + (state === 'play' ? Math.sin(clock * 7) * 0.12 * me.dizzy : 0));
 
-    if (state === 'play') {
-      time += dt;
-      score += dt * (10 + 25 * hard);
-      for (const kind of Object.keys(harms)) harms[kind] = Math.max(0, harms[kind] - dt);
+  // ---- A frame ----
+  // A frame is taken in parts, each a function of its own. What runs every frame for everything in the water
+  // (the fish swimming, the others moving, the fish being drawn) is kept apart from what happens only now and
+  // then (a current starting, something new coming, a meeting, an ending). A browser's engine makes a function
+  // fast only while nothing new happens in it, and takes that back the first time something does; kept apart,
+  // the parts that carry the load stay fast from the first seconds on.
 
-      // A current comes for a few seconds from one of the four sides.
-      untilCurrent -= dt;
-      if (!current && untilCurrent <= 0) {
-        const [x, y] = pick([[1, 0], [-1, 0], [0, 1], [0, -1]]);
-        current = { age: 0, life: random(3.2, 4.6) };
-        Object.assign(flow, { x, y });
-        sound('rush', width * (0.5 - 0.3 * x));   // from the side the water comes from
+  // A current comes for a few seconds from one of the four sides.
+  const startCurrent = () => {
+    const [x, y] = pick([[1, 0], [-1, 0], [0, 1], [0, -1]]);
+    current = { age: 0, life: random(3.2, 4.6) };
+    Object.assign(flow, { x, y });
+    sound('rush', width * (0.5 - 0.3 * x));   // from the side the water comes from
+  };
+  const runCurrent = (dt) => {
+    untilCurrent -= dt;
+    if (!current && untilCurrent <= 0) startCurrent();
+    if (current) {
+      current.age += dt;
+      flow.force = clamp(Math.min(current.age, current.life - current.age) / 0.7, 0, 1);
+      if (current.age >= current.life) {
+        current = null;
+        untilCurrent = random(13, 22);
       }
-      if (current) {
-        current.age += dt;
-        flow.force = clamp(Math.min(current.age, current.life - current.age) / 0.7, 0, 1);
-        if (current.age >= current.life) {
-          current = null;
-          untilCurrent = random(13, 22);
-        }
-      }
-      push.x += (flow.x * flow.force * reach * 0.28 - push.x) * Math.min(dt * 4, 1);
-      push.y += (flow.y * flow.force * reach * 0.28 - push.y) * Math.min(dt * 4, 1);
+    }
+    push.x += (flow.x * flow.force * reach * 0.28 - push.x) * Math.min(dt * 4, 1);
+    push.y += (flow.y * flow.force * reach * 0.28 - push.y) * Math.min(dt * 4, 1);
+  };
 
-      // A finger works a stick that stands where it was put down: the further it is pushed, the faster the fish
-      // swims that way.
-      // After a caterpillar the fish is full: `me.fat` goes to one and back, and with it the fish swims at less
-      // than half its speed, answers late and hangs low. After a beetle `me.dizzy` does the same, and the fish
-      // weaves about the place it is steered to.
-      me.fat += ((harms.heavy > 0 ? 1 : 0) - me.fat) * Math.min(dt * 4, 1);
-      me.dizzy += ((harms.dizzy > 0 ? 1 : 0) - me.dizzy) * Math.min(dt * 4, 1);
-      me.chew = Math.max(0, me.chew - dt);
-      const busy = me.chew / 0.45;   // one just after it has swallowed a small fish, falling to nothing: it is a little slower
-      const slow = (1 - 0.55 * me.fat) * (1 - 0.4 * busy);
-      const lean = finger ? Math.hypot(finger.x - finger.fromX, finger.y - finger.fromY) : 0;
-      if (lean > stickReach * 0.1) {
-        const pace = Math.min(lean / stickReach, 1) ** 1.3 * reach * 1.3 * slow * dt / lean;
-        me.toX += (finger.x - finger.fromX) * pace;
-        me.toY += (finger.y - finger.fromY) * pace;
-      }
-      const swim = reach * 1.1 * slow * dt;
-      if (keys.has('left')) me.toX -= swim;
-      if (keys.has('right')) me.toX += swim;
-      if (keys.has('up')) me.toY -= swim;
-      if (keys.has('down')) me.toY += swim;
-      me.toX = clamp(me.toX, unit * 0.7, width - unit * 0.7);
-      me.toY = clamp(me.toY, unit * 0.6, floor - unit * 0.3);
-      knock.x *= Math.exp(-dt * 4.5);
-      knock.y *= Math.exp(-dt * 4.5);
-      // Where it is steered, carried and knocked to. The edges and the seabed push back from there: the fish
-      // can lean into the last stretch before them, but not stay in it.
-      const wantX = me.toX + push.x + knock.x + Math.sin(clock * 5.2) * unit * 0.85 * me.dizzy;
-      const wantY = me.toY + push.y + knock.y + unit * me.fat + Math.sin(clock * 3.7 + 1) * unit * 0.85 * me.dizzy;
-      back.x += (clamp(wantX, rim, width - rim) - wantX - back.x) * Math.min(dt * 3.5, 1);
-      back.y += (clamp(wantY, rim, floor - unit * 0.9) - wantY - back.y) * Math.min(dt * 3.5, 1);
-      const pull = Math.min(dt * mix(11, 3.2, me.fat) * (1 - 0.5 * busy), 1);
-      let moveX = (clamp(wantX + back.x, unit * 0.7, width - unit * 0.7) - me.x) * pull;
-      let moveY = (clamp(wantY + back.y, unit * 0.6, floor - unit * 0.3) - me.y) * pull;
-      const most = reach * Math.min(mix(8, 0.5, me.fat), mix(8, 0.9, busy)) * dt;   // the fastest it can go, when it is full or busy
-      const went = Math.hypot(moveX, moveY);
-      if (went > most) {
-        moveX *= most / went;
-        moveY *= most / went;
-      }
-      me.x += moveX;
-      me.y += moveY;
-      if (Math.abs(moveX) > 0.6) me.facing = Math.sign(moveX);
-      me.tilt = mix(me.tilt, clamp(moveY / (dt || 1) / (unit * 15), -0.5, 0.5), 0.2);
-      me.size = 1 + 0.08 * me.fat;
+  // A finger works a stick that stands where it was put down: the further it is pushed, the faster the fish
+  // swims that way. It answers gently near the middle, so a small move of the finger is a small move of the
+  // fish, and at its full reach the fish is as fast as with the keys.
+  // After a caterpillar the fish is full: `me.fat` goes to one and back, and with it the fish swims at less
+  // than half its speed, answers late and hangs low. After a beetle `me.dizzy` does the same, and the fish
+  // weaves about the place it is steered to.
+  const moveMe = (dt) => {
+    me.fat += ((harms.heavy > 0 ? 1 : 0) - me.fat) * Math.min(dt * 4, 1);
+    me.dizzy += ((harms.dizzy > 0 ? 1 : 0) - me.dizzy) * Math.min(dt * 4, 1);
+    me.chew = Math.max(0, me.chew - dt);
+    const busy = me.chew / 0.45;   // one just after it has swallowed a small fish, falling to nothing: it is a little slower
+    const slow = (1 - 0.55 * me.fat) * (1 - 0.4 * busy);
+    const lean = finger ? Math.hypot(finger.x - finger.fromX, finger.y - finger.fromY) : 0;
+    if (lean > stickReach * 0.1) {
+      const pace = Math.min(lean / stickReach, 1) ** 1.7 * reach * 1.1 * slow * dt / lean;
+      me.toX += (finger.x - finger.fromX) * pace;
+      me.toY += (finger.y - finger.fromY) * pace;
+    }
+    const swim = reach * 1.1 * slow * dt;
+    if (keys.has('left')) me.toX -= swim;
+    if (keys.has('right')) me.toX += swim;
+    if (keys.has('up')) me.toY -= swim;
+    if (keys.has('down')) me.toY += swim;
+    me.toX = clamp(me.toX, unit * 0.7, width - unit * 0.7);
+    me.toY = clamp(me.toY, unit * 0.6, floor - unit * 0.3);
+    knock.x *= Math.exp(-dt * 4.5);
+    knock.y *= Math.exp(-dt * 4.5);
+    // Where it is steered, carried and knocked to. The edges and the seabed push back from there: the fish
+    // can lean into the last stretch before them, but not stay in it.
+    const wantX = me.toX + push.x + knock.x + Math.sin(clock * 5.2) * unit * 0.85 * me.dizzy;
+    const wantY = me.toY + push.y + knock.y + unit * me.fat + Math.sin(clock * 3.7 + 1) * unit * 0.85 * me.dizzy;
+    back.x += (clamp(wantX, rim, width - rim) - wantX - back.x) * Math.min(dt * 3.5, 1);
+    back.y += (clamp(wantY, rim, floor - unit * 0.9) - wantY - back.y) * Math.min(dt * 3.5, 1);
+    const pull = Math.min(dt * mix(11, 3.2, me.fat) * (1 - 0.5 * busy), 1);
+    let moveX = (clamp(wantX + back.x, unit * 0.7, width - unit * 0.7) - me.x) * pull;
+    let moveY = (clamp(wantY + back.y, unit * 0.6, floor - unit * 0.3) - me.y) * pull;
+    const most = reach * Math.min(mix(8, 0.5, me.fat), mix(8, 0.9, busy)) * dt;   // the fastest it can go, when it is full or busy
+    const went = Math.hypot(moveX, moveY);
+    if (went > most) {
+      moveX *= most / went;
+      moveY *= most / went;
+    }
+    me.x += moveX;
+    me.y += moveY;
+    if (Math.abs(moveX) > 0.6) me.facing = Math.sign(moveX);
+    me.tilt = mix(me.tilt, clamp(moveY / (dt || 1) / (unit * 15), -0.5, 0.5), 0.2);
+    me.size = 1 + 0.08 * me.fat;
+  };
 
-      // The fish breathes: every few seconds two or three small bubbles leave its mouth, one after another.
-      breath.wait -= dt;
-      if (breath.wait <= 0) {
-        pops.push({
-          x: me.x + me.facing * unit * me.size * 0.46, y: me.y - unit * 0.03,
-          vx: me.facing * unit * random(0.05, 0.25), vy: -unit * random(0.5, 0.85), size: Math.max(1.3, unit * random(0.028, 0.048)), life: random(0.9, 1.4),
-        });
-        breath.left -= 1;
-        breath.wait = breath.left > 0 ? random(0.09, 0.17) : random(2, 3.4);
-        if (breath.left <= 0) breath.left = pick([2, 3, 3]);
-      }
+  // The fish breathes: every few seconds two or three small bubbles leave its mouth, one after another.
+  const breathe = (dt) => {
+    breath.wait -= dt;
+    if (breath.wait <= 0) {
+      pops.push({
+        x: me.x + me.facing * unit * me.size * 0.46, y: me.y - unit * 0.03,
+        vx: me.facing * unit * random(0.05, 0.25), vy: -unit * random(0.5, 0.85), size: Math.max(1.3, unit * random(0.028, 0.048)), life: random(0.9, 1.4),
+      });
+      breath.left -= 1;
+      breath.wait = breath.left > 0 ? random(0.09, 0.17) : random(2, 3.4);
+      if (breath.left <= 0) breath.left = pick([2, 3, 3]);
+    }
+  };
 
-      // It opens its mouth for a bug that is close or a small fish in front of it, and swallows after one.
-      const snack = bugs.some((bug) => bug.eaten === undefined && Math.hypot(bug.at - me.x, bug.y - me.y) < unit * 1.6)
-        || fry.some((small) => small.eaten === undefined && me.facing * (small.x - me.x) > 0 && Math.hypot(small.x - me.x, small.y - me.y) < unit * 1.3);
-      me.mouth += ((snack ? 0.8 : 0) - me.mouth) * Math.min(dt * 16, 1);
-      me.gulp = Math.max(0, me.gulp - dt);
+  // It opens its mouth for a bug that is close or a small fish in front of it, and swallows after one.
+  const openMouth = (dt) => {
+    const snack = bugs.some(bugNear) || fry.some(fryAhead);
+    me.mouth += ((snack ? 0.8 : 0) - me.mouth) * Math.min(dt * 16, 1);
+    me.gulp = Math.max(0, me.gulp - dt);
+  };
 
-      // A hook comes down every half a minute to a minute, and sometimes two together: more often two as the
-      // time passes, never more than two in the water.
-      untilHook -= dt;
-      if (untilHook <= 0) {
-        untilHook = random(30, 60);
-        for (let more = Math.random() < 0.25 + 0.35 * Math.min(hard, 1) ? 2 : 1; more > 0 && hooks.length < 2; more--) addHook();
-      }
-
-      // More of everything as the time passes, and much more once the ramp is over. The taller the water is
-      // beside the fish, the more fish it takes to fill it as well.
-      const late = Math.max(0, hard - 1);
-      sinceFish += dt;
-      if (sinceFish > mix(0.5, 0.17, Math.min(hard, 1) ** 0.8) / (1 + late * 6) * clamp(14 * unit / floor, 0.5, 1.5)) {
-        sinceFish = 0;
-        addFish(hard);
-      }
-      untilFry -= dt;
-      if (untilFry <= 0) {
-        untilFry = random(1.4, 3) / (1 + Math.min(hard, 2));
-        addFry(hard);
-      }
-      untilJunk -= dt;
-      if (untilJunk <= 0) {
-        untilJunk = random(0.75, 1.3) * mix(12, 6, Math.min(hard, 1)) / (1 + late * 2);
-        addJunk(hard);
-      }
-      untilFly -= dt;
-      if (untilFly <= 0) {
-        untilFly = random(7, 14);
-        addBug('firefly');
-      }
-      untilTreat -= dt;
-      if (untilTreat <= 0) {
-        untilTreat = random(34, 58);
-        addBug(pick(['beetle', 'caterpillar']));
-      }
-      scoreText.textContent = Math.floor(score);
-    } else {
-      flow.force = Math.max(0, flow.force - dt * 2);
+  // What the water sends, each kind in its own time.
+  const send = (dt, hard) => {
+    // A hook comes down every half a minute to a minute, and sometimes two together: more often two as the
+    // time passes, never more than two in the water.
+    untilHook -= dt;
+    if (untilHook <= 0) {
+      untilHook = random(30, 60);
+      for (let more = Math.random() < 0.25 + 0.35 * Math.min(hard, 1) ? 2 : 1; more > 0 && hooks.length < 2; more--) addHook();
     }
 
-    // Everything keeps moving after the fish is gone; nothing new comes.
-    const carryX = flow.x * flow.force * reach * 0.2 * dt;   // the current takes the light things with it
-    const carryY = flow.y * flow.force * reach * 0.2 * dt;
+    // More of everything as the time passes, and much more once the ramp is over. The taller the water is
+    // beside the fish, the more fish it takes to fill it as well.
+    const late = Math.max(0, hard - 1);
+    sinceFish += dt;
+    if (sinceFish > mix(0.5, 0.17, Math.min(hard, 1) ** 0.8) / (1 + late * 6) * clamp(14 * unit / floor, 0.5, 1.5)) {
+      sinceFish = 0;
+      addFish(hard);
+    }
+    untilFry -= dt;
+    if (untilFry <= 0) {
+      untilFry = random(1.4, 3) / (1 + Math.min(hard, 2));
+      addFry(hard);
+    }
+    untilJunk -= dt;
+    if (untilJunk <= 0) {
+      untilJunk = random(0.75, 1.3) * mix(12, 6, Math.min(hard, 1)) / (1 + late * 2);
+      addJunk(hard);
+    }
+    untilFly -= dt;
+    if (untilFly <= 0) {
+      untilFly = random(7, 14);
+      addBug('firefly');
+    }
+    untilTreat -= dt;
+    if (untilTreat <= 0) {
+      untilTreat = random(34, 58);
+      addBug(pick(['beetle', 'caterpillar']));
+    }
+  };
+
+  // Everything keeps moving after the fish is gone; nothing new comes. The bigger fish first:
+  const moveFish = (dt) => {
     for (const other of others) {
       if (other !== ending?.who) {
         // A fish that has the player right in front of its nose turns on it and opens its mouth.
         const way = Math.sign(other.speed);
-        const gap = Math.hypot(me.x - (other.x + way * other.length * 0.5), me.y - other.at);
-        const hunts = state === 'play' && way * (me.x - other.x) > 0 && gap < unit * 0.9 + other.length * 0.12;
+        const dx = me.x - (other.x + way * other.length * 0.5);   // from its nose to the player
+        const dy = me.y - other.at;
+        const hunts = state === 'play' && way * (me.x - other.x) > 0 && Math.sqrt(dx * dx + dy * dy) < unit * 0.9 + other.length * 0.12;
         const climb = hunts ? clamp((me.y - other.at) / (unit * 0.5), -1, 1) * 0.5 : 0;   // as a share of its speed
         other.y += climb * Math.abs(other.speed) * dt;
         other.tilt += (Math.atan(climb) - other.tilt) * Math.min(dt * 10, 1);
@@ -860,6 +970,11 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
       other.x += other.speed * dt;
       other.at = other.y + Math.sin(clock * other.beat + other.phase) * other.weave;
     }
+  };
+  // and then the rest of what is in the water.
+  const moveRest = (dt) => {
+    const carryX = flow.x * flow.force * reach * 0.2 * dt;   // the current takes the light things with it
+    const carryY = flow.y * flow.force * reach * 0.2 * dt;
     for (const small of fry) {
       if (small.eaten === undefined) {
         small.x += small.vx * dt + carryX;
@@ -917,108 +1032,106 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
       note.y -= 34 * dt;
       note.life -= dt;
     }
+  };
 
-    if (state === 'play') {
-      for (const bug of bugs) {
-        if (bug.eaten === undefined && near(bug.at, bug.y, bug.kind === 'firefly' ? flySize : bugSize * 0.8)) eat(bug);
-      }
-      for (const small of fry) {
-        if (small.eaten !== undefined || small.hush > 0 || !brushes(small)) continue;
-        if (me.facing * (small.x - me.x) > 0) swallow(small);
-        else bump(small);
-      }
-      const fish = others.find(meets);
-      const item = fish ? null : junk.find((thing) => near(thing.x, thing.y, thing.size * JUNK[thing.kind].hit));
-      const caught = fish || item ? null : hooks.find((one) => one.armed > 0 && near(one.x, one.y, hookReach * one.armed));
-      if (fish) endBy('fish', fish);
-      else if (item) endBy('junk', item);
-      else if (caught) endBy('hook', caught);
-    } else if (state === 'ending' && ending.left !== undefined) {
-      ending.left += dt;
-      if ((!others.length && !fry.length) || ending.left > 1.2) finish();
-    } else if (state === 'ending' && ending.kind === 'fish') {
-      // It turns to the fish and lunges with its mouth open, the fish slides in, the mouth shuts and it swallows.
-      const { who, from, face, at } = ending;
-      ending.age += dt;
-      const lunge = 1 - (1 - clamp(ending.age / 0.26, 0, 1)) ** 3;
-      const gulp = clamp((ending.age - 0.26) / 0.24, 0, 1);
-      const settle = clamp((ending.age - 0.5) / 0.3, 0, 1);
-      who.length = mix(from.length, Math.max(from.length * 1.12, unit * 1.9), lunge);
-      who.x = mix(from.x, at.x + face * (unit * 0.1 - who.length * 0.5), lunge);
-      who.y = mix(from.y, at.y, lunge);
-      who.at = who.y;
-      who.speed = face * 0.001;   // it stays where it is, facing the fish
-      who.tilt = from.tilt * (1 - lunge);
-      who.mouth = ending.age < 0.26 ? mix(from.mouth, 1, lunge) : 1 - gulp ** 2;
-      ending.squash = Math.sin(settle * Math.PI) * 0.14;
-      me.show = 1 - gulp;
-      me.x = mix(at.x, who.x + face * who.length * 0.26, gulp);
-      me.y = mix(at.y, who.y, gulp);
-      me.spin += dt * 12 * gulp;
-      if (gulp > 0 && !ending.bitten) {
-        ending.bitten = true;   // the jaws shut
-        sound('chomp', who.x);
-      }
-      if (settle > 0 && !ending.burst) {
-        ending.burst = true;
-        pop(who.x + face * who.length * 0.45, who.y, 8, 70, 150);
-        sound('burble', who.x);
-      }
-      if (ending.age >= 0.8) {
-        who.speed = face * Math.max(ending.pace, width * 0.2);
-        scatter();
-      }
-    } else if (state === 'ending' && ending.kind === 'junk') {
-      // The junk lands on the fish and takes it down into the seabed, turning, with a trail of bubbles.
-      const item = ending.who;
-      ending.age += dt;
-      item.fall += height * 0.9 * dt;
-      me.x += (item.x - me.x) * Math.min(dt * 12, 1);
-      me.y += (item.y - me.y) * Math.min(dt * 16, 1);
-      me.spin += dt * 7;
-      me.tilt = 0;
-      me.show = clamp((floor + unit * 0.4 - me.y) / (unit * 0.8), 0, 1);
-      if (Math.floor(ending.age / 0.07) !== Math.floor((ending.age - dt) / 0.07)) pop(me.x, me.y, 1, 30, 140);
-      if (me.show === 0 || ending.age >= 1.6) {
-        me.show = 0;
-        pop(item.x, floor, 7, 90, 70);
-        sound('burble', item.x, { level: 0.8 });
-        scatter();
-      }
-    } else if (state === 'ending') {
-      // The fish goes for the hook, the line jerks tight, and up it goes by the mouth, wriggling. The view stays.
-      const one = ending.who;
-      ending.age += dt;
-      const bite = clamp(ending.age / 0.16, 0, 1);
-      const hang = clamp((ending.age - 0.16) / 0.26, 0, 1);
-      one.armed = Math.max(0, one.armed - dt * 5);
-      if (ending.age < 0.5) {
-        one.y = ending.hookY + (bite === 1 ? Math.sin((ending.age - 0.16) * 40) * 5 * (1 - hang * 0.6) : 0);
-      } else {
-        ending.lift += height * 3.4 * dt;
-        one.y -= ending.lift * dt;
-      }
-      const angle = hang * Math.PI / 2;
-      const half = unit * me.size * 0.5;
-      me.spin = -me.facing * angle + Math.sin(ending.age * 30) * 0.2 * hang;
-      me.tilt *= 1 - bite;
-      me.x = mix(ending.at.x, one.x - me.facing * half * Math.cos(angle), bite);
-      me.y = mix(ending.at.y, one.y + half * Math.sin(angle), bite);
-      if (Math.floor(ending.age / 0.09) !== Math.floor((ending.age - dt) / 0.09)) pop(me.x, me.y, 1, 30, 100);
-      if (one.y < -unit * 1.5) {
-        me.show = 0;
-        scatter();
-      }
+  // What the fish meets while it lives: food, a knock, or its end.
+  const meet = () => {
+    for (const bug of bugs) {
+      if (bug.eaten === undefined && near(bug.at, bug.y, bug.kind === 'firefly' ? flySize : bugSize * 0.8)) eat(bug);
     }
-    others = others.filter((other) => other.x > -other.length * 1.5 && other.x < width + other.length * 1.5);
-    fry = fry.filter((small) => !small.gone && small.x > -unit * 5 && small.x < width + unit * 5 && small.y > -unit && small.y < height + unit);
-    junk = junk.filter((item) => item.y < height + item.size * 1.5);
-    bugs = bugs.filter((bug) => !bug.gone && bug.y < floor + unit * 0.3);
-    hooks = hooks.filter((one) => one.wait > 0 || one.y > -hookSize * 3);
-    pops = pops.filter((bubble) => bubble.life > 0);
-    notes = notes.filter((note) => note.life > 0);
+    for (const small of fry) {
+      if (small.eaten !== undefined || small.hush > 0 || !brushes(small)) continue;
+      if (me.facing * (small.x - me.x) > 0) swallow(small);
+      else bump(small);
+    }
+    const fish = others.find(meets);
+    const item = fish ? null : junk.find(junkHits);
+    const caught = fish || item ? null : hooks.find(hookCatches);
+    if (fish) endBy('fish', fish);
+    else if (item) endBy('junk', item);
+    else if (caught) endBy('hook', caught);
+  };
 
-    // ---- The picture, back to front ----
+  // It turns to the fish and lunges with its mouth open, the fish slides in, the mouth shuts and it swallows.
+  const fishTakes = (dt) => {
+    const { who, from, face, at } = ending;
+    ending.age += dt;
+    const lunge = 1 - (1 - clamp(ending.age / 0.26, 0, 1)) ** 3;
+    const gulp = clamp((ending.age - 0.26) / 0.24, 0, 1);
+    const settle = clamp((ending.age - 0.5) / 0.3, 0, 1);
+    who.length = mix(from.length, Math.max(from.length * 1.12, unit * 1.9), lunge);
+    who.x = mix(from.x, at.x + face * (unit * 0.1 - who.length * 0.5), lunge);
+    who.y = mix(from.y, at.y, lunge);
+    who.at = who.y;
+    who.speed = face * 0.001;   // it stays where it is, facing the fish
+    who.tilt = from.tilt * (1 - lunge);
+    who.mouth = ending.age < 0.26 ? mix(from.mouth, 1, lunge) : 1 - gulp ** 2;
+    ending.squash = Math.sin(settle * Math.PI) * 0.14;
+    me.show = 1 - gulp;
+    me.x = mix(at.x, who.x + face * who.length * 0.26, gulp);
+    me.y = mix(at.y, who.y, gulp);
+    me.spin += dt * 12 * gulp;
+    if (gulp > 0 && !ending.bitten) {
+      ending.bitten = true;   // the jaws shut
+      sound('chomp', who.x);
+    }
+    if (settle > 0 && !ending.burst) {
+      ending.burst = true;
+      pop(who.x + face * who.length * 0.45, who.y, 8, 70, 150);
+      sound('burble', who.x);
+    }
+    if (ending.age >= 0.8) {
+      who.speed = face * Math.max(ending.pace, width * 0.2);
+      scatter();
+    }
+  };
+  // The junk lands on the fish and takes it down into the seabed, turning, with a trail of bubbles.
+  const junkTakes = (dt) => {
+    const item = ending.who;
+    ending.age += dt;
+    item.fall += height * 0.9 * dt;
+    me.x += (item.x - me.x) * Math.min(dt * 12, 1);
+    me.y += (item.y - me.y) * Math.min(dt * 16, 1);
+    me.spin += dt * 7;
+    me.tilt = 0;
+    me.show = clamp((floor + unit * 0.4 - me.y) / (unit * 0.8), 0, 1);
+    if (Math.floor(ending.age / 0.07) !== Math.floor((ending.age - dt) / 0.07)) pop(me.x, me.y, 1, 30, 140);
+    if (me.show === 0 || ending.age >= 1.6) {
+      me.show = 0;
+      pop(item.x, floor, 7, 90, 70);
+      sound('burble', item.x, { level: 0.8 });
+      scatter();
+    }
+  };
+  // The fish goes for the hook, the line jerks tight, and up it goes by the mouth, wriggling. The view stays.
+  const hookTakes = (dt) => {
+    const one = ending.who;
+    ending.age += dt;
+    const bite = clamp(ending.age / 0.16, 0, 1);
+    const hang = clamp((ending.age - 0.16) / 0.26, 0, 1);
+    one.armed = Math.max(0, one.armed - dt * 5);
+    if (ending.age < 0.5) {
+      one.y = ending.hookY + (bite === 1 ? Math.sin((ending.age - 0.16) * 40) * 5 * (1 - hang * 0.6) : 0);
+    } else {
+      ending.lift += height * 3.4 * dt;
+      one.y -= ending.lift * dt;
+    }
+    const angle = hang * Math.PI / 2;
+    const half = unit * me.size * 0.5;
+    me.spin = -me.facing * angle + Math.sin(ending.age * 30) * 0.2 * hang;
+    me.tilt *= 1 - bite;
+    me.x = mix(ending.at.x, one.x - me.facing * half * Math.cos(angle), bite);
+    me.y = mix(ending.at.y, one.y + half * Math.sin(angle), bite);
+    if (Math.floor(ending.age / 0.09) !== Math.floor((ending.age - dt) / 0.09)) pop(me.x, me.y, 1, 30, 100);
+    if (one.y < -unit * 1.5) {
+      me.show = 0;
+      scatter();
+    }
+  };
+
+  // ---- The picture, back to front ----
+  // The water itself: the streaks of a current and the bubbles that are always rising.
+  const paintWater = (dt) => {
     ctx.clearRect(0, 0, width, height);
     ctx.lineCap = 'round';
     if (flow.force > 0.01) {
@@ -1043,33 +1156,35 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
       ctx.arc(bubble.x * width, bubble.y * height, bubble.size, 0, TAU);
       ctx.stroke();
     }
-
-    const taker = ending?.kind === 'fish' ? ending.who : null;
+  };
+  // The fish, small and big: by far the most of what is drawn.
+  const paintFish = (taker) => {
     for (const small of fry) {
       drawFish(small.x, small.y, small.length * (small.eaten === undefined ? 1 : clamp(1 - small.eaten / 0.14, 0.15, 1)), Math.sign(small.vx), 'rgba(255,255,255,0.5)',
-        { wag: Math.sin(clock * 13 + small.phase) * 7, tilt: clamp(small.vy / (Math.abs(small.vx) || 1), -0.6, 0.6) });
+        clamp(small.vy / (Math.abs(small.vx) || 1), -0.6, 0.6), Math.sin(clock * 13 + small.phase) * 7);
     }
     for (const other of others) {
       if (other === taker) continue;
-      drawFish(other.x, other.at, other.length, Math.sign(other.speed), `rgba(255,255,255,${other.shade})`,
-        { wag: Math.sin(clock * 9 + other.phase) * 5, tilt: other.tilt, mouth: other.mouth });
+      drawFish(other.x, other.at, other.length, Math.sign(other.speed), other.fill, other.tilt, Math.sin(clock * 9 + other.phase) * 5, other.mouth);
     }
-    const drawMe = () => drawFish(me.x, me.y, unit * me.size * me.show, me.facing, mine,
-      { tilt: me.tilt, wag: Math.sin(now / (70 + 60 * me.fat)) * 6, spin: me.spin + (state === 'play' ? Math.sin(clock * 7) * 0.12 * me.dizzy : 0),
-        mouth: me.mouth, squash: Math.sin(me.gulp / 0.22 * Math.PI) * 0.12, fat: me.fat * 0.25 });
+  };
+  // What is in the water besides, the player's fish among it, and the fish that takes it.
+  const paintThings = (now, taker) => {
     // A tyre goes round the fish it has caught; the rest of the junk is behind it.
     const ringed = ending?.kind === 'junk' && ending.who.kind === 'tyre';
-    if (ringed) drawMe();
+    if (ringed) drawMe(now);
     for (const item of junk) drawJunk(item);
     for (const bug of bugs) drawBug(bug);
     for (const one of hooks) drawHook(one);
-    if (!ringed) drawMe();
+    if (!ringed) drawMe(now);
     if (taker) {
       // It turns round first if the fish came at it from behind.
       drawFish(taker.x, taker.at, taker.length, mix(ending.was, ending.face, clamp(ending.age / 0.12, 0, 1)) || 0.01,
-        `rgba(255,255,255,${taker.shade})`, { wag: Math.sin(now / 60) * 5, tilt: taker.tilt, mouth: taker.mouth, squash: ending.squash });
+        taker.fill, taker.tilt, Math.sin(now / 60) * 5, taker.mouth, ending.squash);
     }
-
+  };
+  // What lies over all of it: the bubbles something let out, the stick under a finger, the points.
+  const paintOver = () => {
     ctx.lineWidth = 1.2;
     for (const bubble of pops) {
       ctx.strokeStyle = `rgba(255,255,255,${0.75 * clamp(bubble.life * 2, 0, 1)})`;
@@ -1087,24 +1202,75 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
       ctx.stroke();
       ctx.fillStyle = 'rgba(255,255,255,0.4)';
       ctx.beginPath();
-      ctx.arc(finger.x, finger.y, stickReach * 0.42, 0, TAU);
+      ctx.arc(finger.x, finger.y, stickReach * 0.3, 0, TAU);
       ctx.fill();
     }
-    ctx.font = `700 ${Math.round(clamp(unit * 0.34, 13, 18))}px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
-    ctx.textAlign = 'center';
-    for (const note of notes) {
-      ctx.fillStyle = `rgba(255,255,255,${clamp(note.life * 1.6, 0, 1)})`;
-      ctx.fillText(note.text, clamp(note.x, 60, width - 60), note.y);
+    if (notes.length) {
+      ctx.font = noteFont;
+      ctx.textAlign = 'center';
+      for (const note of notes) {
+        ctx.fillStyle = `rgba(255,255,255,${clamp(note.life * 1.6, 0, 1)})`;
+        ctx.fillText(note.text, clamp(note.x, 60, width - 60), note.y);
+      }
     }
+  };
+
+  let last = 0;
+  let frame = 0;
+  const step = (now) => {
+    frame = requestAnimationFrame(step);
+    const dt = Math.min((now - last) / 1000 || 0, 0.05);   // a hidden tab or a slow frame does not jump the game ahead
+    last = now;
+    const hard = time / RAMP;
+    clock += dt;
+    if (state === 'play') {
+      time += dt;
+      score += dt * (10 + 25 * hard);
+      harms.dizzy = Math.max(0, harms.dizzy - dt);
+      harms.heavy = Math.max(0, harms.heavy - dt);
+      runCurrent(dt);
+      moveMe(dt);
+      breathe(dt);
+      openMouth(dt);
+      send(dt, hard);
+      if (Math.floor(score) !== shown) scoreText.textContent = shown = Math.floor(score);
+    } else {
+      flow.force = Math.max(0, flow.force - dt * 2);
+    }
+    moveFish(dt);
+    moveRest(dt);
+    if (state === 'play') {
+      meet();
+    } else if (state === 'ending' && ending.left !== undefined) {
+      ending.left += dt;
+      if ((!others.length && !fry.length) || ending.left > 1.2) finish();
+    } else if (state === 'ending' && ending.kind === 'fish') {
+      fishTakes(dt);
+    } else if (state === 'ending' && ending.kind === 'junk') {
+      junkTakes(dt);
+    } else if (state === 'ending') {
+      hookTakes(dt);
+    }
+    keep(others, fishStays);
+    keep(fry, fryStays);
+    keep(junk, junkStays);
+    keep(bugs, bugStays);
+    keep(hooks, hookStays);
+    keep(pops, lasts);
+    keep(notes, lasts);
+    const taker = ending?.kind === 'fish' ? ending.who : null;
+    paintWater(dt);
+    paintFish(taker);
+    paintThings(now, taker);
+    paintOver();
   };
 
   // ---- Steering: the mouse (the fish goes where the pointer is), a finger (a stick where it is put down;
   //      the first finger only) or the keys ----
   const steer = (event) => {
     if (state !== 'play') return;
-    const place = box.getBoundingClientRect();
-    const x = event.clientX - place.left;
-    const y = event.clientY - place.top;
+    const x = event.clientX - left;
+    const y = event.clientY - top;
     if (event.pointerType !== 'touch') {
       me.toX = x;
       me.toY = y;
@@ -1132,6 +1298,15 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
       leave();
       return;
     }
+    if (event.target === nameBox) {
+      // Letters go into the box, not to the fish. Enter is done with them: it goes on to the button without
+      // pressing it.
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        end.querySelector('[data-again]').focus({ preventScroll: true });
+      }
+      return;
+    }
     const way = KEYS[event.key] ?? KEYS[event.key.toLowerCase()];
     if (way) {
       if (state === 'play') keys.add(way);
@@ -1141,7 +1316,7 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
       event.preventDefault();   // the page under the game stays where it is
     } else if (event.key === 'Tab') {
       // The focus stays inside the game.
-      const stops = [...box.querySelectorAll('button')].filter((button) => button.offsetParent);
+      const stops = [...box.querySelectorAll('button, input')].filter((stop) => stop.offsetParent);
       const first = stops[0];
       const lastStop = stops.at(-1);
       if (event.shiftKey ? document.activeElement === first || document.activeElement === box : document.activeElement === lastStop) {
@@ -1177,6 +1352,14 @@ export function dive({ playEffect = () => {}, swapSea = () => {}, loadSounds = (
   box.addEventListener('wheel', onWheel, { passive: false });
   box.querySelector('.dive-close').addEventListener('click', leave);
   end.querySelector('[data-leave]').addEventListener('click', leave);
+  // A phone's keyboard keeps a word open while it is typed: the table follows it letter by letter, but what
+  // is in the box is put right only when the keyboard has let go of it.
+  const lettersTyped = (event) => {
+    if (!event.isComposing) nameBox.value = clean(nameBox.value);
+    settle(clean(nameBox.value));
+  };
+  nameBox.addEventListener('input', lettersTyped);
+  nameBox.addEventListener('compositionend', lettersTyped);
   end.querySelector('[data-again]').addEventListener('click', () => {
     reset();
     box.focus({ preventScroll: true });

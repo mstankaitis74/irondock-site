@@ -359,6 +359,7 @@
     if (!cssScrollParallax) addEventListener('scroll', () => { if (heroVisible) schedule(); }, { passive: true });
     if (finePointer) {
       addEventListener('pointermove', (event) => {
+        if (event.target.closest?.('.dive')) return;   // the game under the water covers the scene: nothing to shift
         targetX = (event.clientX / innerWidth) * 2 - 1;
         targetY = Math.min((event.clientY + scrollY) / heroHeight, 1) * 2 - 1;
         if (heroVisible) schedule();
@@ -397,9 +398,12 @@
     return seaFx.slice(0, clientY >= line('surf', 2.05) ? 3 : clientY >= line('water', 1.4) ? 2 : 1);
   };
 
-  // One buoy every 140em of the nearest wave row, as many as its width needs (dock.css: .buoy).
+  // One buoy every 140em of the nearest wave row, as many as its width needs (dock.css: .buoy). A screen
+  // narrower than that plus a buoy would show none at some berths, so there they stand one to a berth instead.
   const placeBuoys = () => {
-    const wanted = Math.ceil(surf.offsetWidth / (hero.offsetHeight * 1.4));
+    const narrow = hero.offsetWidth < hero.offsetHeight * 1.48;
+    hero.classList.toggle('is-narrow', narrow);
+    const wanted = narrow ? Number(hero.style.getPropertyValue('--stations')) + 1 : Math.ceil(surf.offsetWidth / (hero.offsetHeight * 1.4));
     for (let k = surf.querySelectorAll('.buoy').length; k < wanted; k++) {
       const buoy = document.createElement('i');
       buoy.className = 'buoy';

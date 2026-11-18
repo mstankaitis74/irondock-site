@@ -66,7 +66,7 @@
   --art-pier: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 450' preserveAspectRatio='none'%3E%3Cpath d='M0 14L50 54 100 14 150 54 200 14 250 54 300 14 350 54 400 14 450 54 500 14 550 54 600 14' fill='none' stroke='%23000' stroke-width='5' stroke-linejoin='round'/%3E%3Cpath d='M93 60h14v390H93zM287 60h26v390h-26zM493 60h14v390h-14zM282 60h36v9h-36zM89 60h22v7H89zM489 60h22v7h-22z'/%3E%3C/svg%3E"); --art-wave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 30' preserveAspectRatio='none'%3E%3Cpath d='M0 14Q50 0 100 14T200 14V30H0Z'/%3E%3C/svg%3E"); --art-crest: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 30' preserveAspectRatio='none'%3E%3Cpath d='M-100 14Q-50 28 0 14T100 14T200 14T300 14' fill='none' stroke='%23000' stroke-width='2.6'/%3E%3C/svg%3E"); --art-ripples: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 120' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M30 18h70M230 18h70M430 18h70M630 18h70M110 40h110M510 40h110M60 66h40M260 66h40M460 66h40M660 66h40M150 96h150M550 96h150'/%3E%3C/svg%3E");
   --art-buoy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1400 120'%3E%3Cg transform='translate(700 0)'%3E%3Cpath d='M22 66L35 30 48 66M27 52h16' fill='none' stroke='%230c1838' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='35' cy='24' r='6.5' fill='%23ffcb6b'/%3E%3Cpath d='M12 120L19 64h32l7 56z' fill='%23ff8a7a'/%3E%3Cpath d='M16.2 86h37.6l1.5 12H14.7z' fill='%23fff' opacity='.92'/%3E%3C/g%3E%3C/svg%3E"); --art-gull: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 12' preserveAspectRatio='none'%3E%3Cpath d='M2 9.5Q7 1.5 14 7.5Q21 1.5 26 9.5' fill='none' stroke='%23000' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --art-glitter-far: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 220' preserveAspectRatio='none'%3E%3Cpath d='M128 6h12M148 28h10M118 47h19M93 70h24M108 70h22M87 70h20M166 91h16M99 110h35M172 110h29M69 110h24M99 129h39M118 129h34M93 129h24M133 153h47M117 170h50M178 170h30M141 193h35M24 193h34M184 215h49' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E"); --art-glitter-a: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 220' preserveAspectRatio='none'%3E%3Cpath d='M122 7h12M124 18h14M106 30h16M80 40h21M129 55h23M70 63h19M129 77h22M138 86h25M184 86h21M81 101h24M61 109h21M41 121h39M95 132h39M45 143h29M151 143h41M111 154h24M58 154h38M94 167h32M187 167h27M53 181h28M122 181h44M173 188h29M25 188h32M140 200h32M180 200h40M210 212h28M42 212h37M40 212h58' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E"); --art-glitter-b: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 220' preserveAspectRatio='none'%3E%3Cpath d='M110 7h11M160 18h12M110 28h14M114 43h16M115 54h16M96 64h20M165 64h25M126 76h27M133 76h22M157 88h30M72 98h28M88 98h25M142 110h32M175 110h34M100 120h29M106 120h29M143 132h41M114 145h38M169 145h19M162 154h23M62 154h21M133 154h44M181 167h36M188 167h29M74 180h41M126 191h39M85 200h40M135 200h52M81 200h29M187 213h55' fill='none' stroke='%23000' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E");
-  --art-fish: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 220'%3E%3Cdefs%3E%3Cg id='f'%3E%3Cpath d='M0-9L15 0 0 9zM10 0Q34-15 58 0 34 15 10 0z'/%3E%3C/g%3E%3C/defs%3E%3Cuse href='%23f' transform='translate(30 44) scale(1)'/%3E%3Cuse href='%23f' transform='translate(126 22) scale(0.8)'/%3E%3Cuse href='%23f' transform='translate(150 96) scale(1.1)'/%3E%3Cuse href='%23f' transform='translate(262 54) scale(0.9)'/%3E%3Cuse href='%23f' transform='translate(304 146) scale(1)'/%3E%3Cuse href='%23f' transform='translate(404 96) scale(0.8)'/%3E%3Cuse href='%23f' transform='translate(436 176) scale(0.7)'/%3E%3Cuse href='%23f' transform='translate(222 188) scale(0.85)'/%3E%3C/svg%3E"); --art-whale: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 400'%3E%3Cpath d='M48 215C60 170 110 135 200 120C300 104 420 108 540 132C650 154 760 186 850 200C890 180 930 150 962 118C952 160 935 190 920 206C940 222 958 255 966 292C925 262 885 236 850 222C770 244 660 282 520 300C400 314 260 318 160 292C100 276 60 250 48 215Z'/%3E%3Cpath d='M300 296C330 340 380 372 432 382C410 350 392 320 384 298Z'/%3E%3Cpath d='M636 152C660 128 684 120 696 122C694 140 696 156 702 168Z'/%3E%3C/svg%3E"); --art-seabed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2400 240'%3E%3Cpath d='M0 240V150Q200 112 420 140T900 150T1400 122T1900 150T2400 150V240Z'/%3E%3Cellipse cx='640' cy='150' rx='70' ry='30'/%3E%3Cellipse cx='716' cy='156' rx='40' ry='20'/%3E%3Cellipse cx='2060' cy='150' rx='90' ry='34'/%3E%3Cg fill='none' stroke='%23000' stroke-width='9' stroke-linecap='round'%3E%3Cg transform='rotate(-18 1700 120)'%3E%3Cpath d='M1700 44v118M1672 70h56M1640 118q6 52 60 52t60-52M1632 132l8-22 18 16zM1768 132l-8-22-18 16z'/%3E%3Ccircle cx='1700' cy='30' r='13'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); --art-weed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2400 240'%3E%3Cg fill='none' stroke='%23000' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M250 192V140q-22-28 0-56t0-56M286 192V136q20-24 0-48t0-40M214 192V142q18-20 2-40'/%3E%3Cpath d='M1120 192V124q-22-28 0-56t0-56M1156 192V122q20-24 0-48M1088 192V128q-16-22 0-44t0-36'/%3E%3Cpath d='M2290 192V150q-22-28 0-56t0-50M2326 192V150q20-24 0-48'/%3E%3C/g%3E%3C/svg%3E");
+  --art-fish: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 520 220'%3E%3Cdefs%3E%3Cg id='f'%3E%3Cpath d='M0-9L15 0 0 9zM10 0Q34-15 58 0 34 15 10 0z'/%3E%3C/g%3E%3C/defs%3E%3Cuse href='%23f' transform='translate(30 44) scale(1)'/%3E%3Cuse href='%23f' transform='translate(126 22) scale(0.8)'/%3E%3Cuse href='%23f' transform='translate(150 96) scale(1.1)'/%3E%3Cuse href='%23f' transform='translate(262 54) scale(0.9)'/%3E%3Cuse href='%23f' transform='translate(304 146) scale(1)'/%3E%3Cuse href='%23f' transform='translate(404 96) scale(0.8)'/%3E%3Cuse href='%23f' transform='translate(436 176) scale(0.7)'/%3E%3Cuse href='%23f' transform='translate(222 188) scale(0.85)'/%3E%3C/svg%3E"); --art-whale: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 400'%3E%3Cpath d='M48 215C60 170 110 135 200 120C300 104 420 108 540 132C650 154 760 186 850 200C890 180 930 150 962 118C952 160 935 190 920 206C940 222 958 255 966 292C925 262 885 236 850 222C770 244 660 282 520 300C400 314 260 318 160 292C100 276 60 250 48 215Z'/%3E%3Cpath d='M300 296C330 340 380 372 432 382C410 350 392 320 384 298Z'/%3E%3Cpath d='M636 152C660 128 684 120 696 122C694 140 696 156 702 168Z'/%3E%3C/svg%3E"); --art-seabed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2400 240'%3E%3Cpath d='M0 240V150Q200 112 420 140T900 150T1400 122T1900 150T2400 150V240Z'/%3E%3Cellipse cx='640' cy='150' rx='70' ry='30'/%3E%3Cellipse cx='716' cy='156' rx='40' ry='20'/%3E%3Cellipse cx='2060' cy='150' rx='90' ry='34'/%3E%3Cg fill='none' stroke='%23000' stroke-width='9' stroke-linecap='round'%3E%3Cg transform='rotate(-18 1700 120)'%3E%3Cpath d='M1700 44v118M1672 70h56M1640 118q6 52 60 52t60-52M1632 132l8-22 18 16zM1768 132l-8-22-18 16z'/%3E%3Ccircle cx='1700' cy='30' r='13'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); --art-weed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 2400 240'%3E%3Cg fill='none' stroke='%23000' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M250 192V140q-22-28 0-56t0-56M286 192V136q20-24 0-48t0-40M214 192V142q18-20 2-40'/%3E%3Cpath d='M1120 192V124q-22-28 0-56t0-56M1156 192V122q20-24 0-48M1088 192V128q-16-22 0-44t0-36'/%3E%3Cpath d='M2290 192V150q-22-28 0-56t0-50M2326 192V150q20-24 0-48'/%3E%3C/g%3E%3C/svg%3E"); --art-swimmer: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-53 -21 104 42'%3E%3Cpath fill-rule='evenodd' d='M50 0Q14-34-30-4V4Q14 34 50 0ZM30.2-8a4.2 4.2 0 1 0-8.4 0 4.2 4.2 0 1 0 8.4 0Z'/%3E%3Cpath d='M-24 0L-52-20-43 0-52 20Z'/%3E%3C/svg%3E");
   --art-sound-on: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 9v6h4l5 4V5L8 9z'/%3E%3Cpath d='M16 8.6a5 5 0 0 1 0 6.8M18.6 6a8.6 8.6 0 0 1 0 12' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E"); --art-sound-off: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 9v6h4l5 4V5L8 9z'/%3E%3Cpath d='M16.5 9.5l5 5M21.5 9.5l-5 5' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
@@ -195,6 +195,9 @@ a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outlin
 .buoy { position: absolute; left: calc(62em + var(--k) * 140em); top: -8.4em; width: 8em; height: 12em;
         background: var(--art-buoy) -70em 0 / 140em 12em no-repeat; filter: var(--buoy);
         transform-origin: 50% 84%; pointer-events: auto; cursor: pointer; }
+/* On a narrow screen that is too far apart for a buoy to be in view at every berth. There (dock.js: placeBuoys)
+   they stand one to a berth, and each berth finds its buoy in the same place: 26em from the screen's left edge. */
+.hero.is-narrow .buoy { left: calc(var(--pad) + 22em + var(--k) * var(--pan)); }
 
 /* The path of light under the sun or the moon: one piece behind the pier, one in front of it. */
 .layer--glitter { top: 64.2em; height: 34em; --f: 0; --depth: 0.14; --reach: 1.2em; }
@@ -475,7 +478,7 @@ footer::after { z-index: 1; -webkit-mask: var(--art-seabed) 85% 100% / auto 100%
 .dive-score b { color: var(--text); font-size: 24px; margin-left: 4px; }
 .dive-best { top: 46px; font-size: 13px; }
 .dive-best b { color: var(--text); }
-.dive-close { position: absolute; z-index: 2; right: 14px; top: 10px; width: 40px; height: 40px; padding: 0; border-radius: 50%;
+.dive-close { position: absolute; z-index: 3; right: 14px; top: 10px; width: 40px; height: 40px; padding: 0; border-radius: 50%;
               border: 1px solid var(--card-edge); background: var(--card); color: var(--text); cursor: pointer; }
 .dive-close::before, .dive-close::after { content: ""; position: absolute; left: 11px; right: 11px; top: 18px; height: 2px;
                                           border-radius: 1px; background: currentColor; rotate: 45deg; }
@@ -484,13 +487,65 @@ footer::after { z-index: 1; -webkit-mask: var(--art-seabed) 85% 100% / auto 100%
 .dive-hint { position: absolute; z-index: 1; left: 50%; bottom: 20%; width: min(88vw, 520px); margin: 0; translate: -50% 0;
              text-align: center; color: var(--muted); pointer-events: none; transition: opacity 0.6s 5s; }
 .dive.is-quiet .dive-hint { opacity: 0; }
+.dive.is-over .dive-hint { visibility: hidden; }   /* the last words stand where it was */
 .dive-end { position: absolute; z-index: 2; left: 50%; top: 50%; width: min(86vw, 340px); padding: 26px 24px 24px; translate: -50% -50%;
             text-align: center; border-radius: 20px; border: 1px solid var(--card-edge);
             background: color-mix(in srgb, var(--deep-3) 84%, transparent); }
 .dive-end strong { display: block; font-size: 28px; letter-spacing: -0.01em; }
-.dive-end p { margin: 10px 0 22px; color: var(--muted); }
-.dive-end .button { border: 0; font: inherit; font-weight: 700; cursor: pointer; }
+.dive-end p { margin: 10px 0 0; color: var(--muted); }
+/* Three letters for a score that has made the table (dive.js). They are typed, so the box takes the caret
+   and the selection that the game's water refuses, and its letters are large enough for a phone not to zoom in. */
+.dive-name { display: block; width: 11em; margin: 10px auto 0; padding: 3px 0 4px 0.14em; border: 0; border-bottom: 2px solid var(--accent);
+             border-radius: 0; background: none; color: var(--accent); caret-color: var(--accent); font: inherit; font-size: 16px;
+             font-weight: 700; letter-spacing: 0.14em; text-align: center; text-transform: uppercase;
+             -webkit-user-select: text; user-select: text; }
+.dive-name[hidden] { display: none; }
+.dive-name::placeholder { color: var(--muted); opacity: 0.8; font-size: 14px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.dive-name:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 8px; border-bottom-color: transparent; }
+/* The ten best, as a food chain: the higher a score stands, the bigger its fish (--place is its row, from 0).
+   The line of the game that has just ended is in the colour of the player's own fish. */
+.dive-scores { list-style: none; margin: 14px 0 0; padding: 0; counter-reset: place; text-align: left; font-size: 15px;
+               font-variant-numeric: tabular-nums; }
+.dive-scores li { display: grid; grid-template-columns: 1.3em 38px 1fr auto; align-items: center; column-gap: 9px; height: 26px;
+                  padding: 0 9px; border-radius: 8px; counter-increment: place; }
+.dive-scores li::before { content: counter(place); color: var(--muted); font-size: 13px; text-align: right; }
+.dive-scores i { justify-self: end; width: calc(36px - var(--place) * 2.2px); aspect-ratio: 104 / 42; background: currentColor;
+                 opacity: 0.55; -webkit-mask: var(--art-swimmer) center / contain no-repeat; mask: var(--art-swimmer) center / contain no-repeat; }
+.dive-scores b { letter-spacing: 0.14em; }
+.dive-scores span { font-weight: 600; }
+.dive-scores [aria-current] { color: var(--accent); background: color-mix(in srgb, var(--accent) 13%, transparent); }
+.dive-scores [aria-current]::before { color: inherit; }
+.dive-scores [aria-current] i { opacity: 1; }
+.dive-end .button { margin-top: 22px; border: 0; font: inherit; font-weight: 700; cursor: pointer; }
 .dive-leave { margin-left: 8px; background: none; color: var(--text); box-shadow: inset 0 0 0 1px var(--card-edge); }
+/* A screen too low for all that gets it closer set, in two columns where it is wide enough for them, and lets
+   the card stand in for the score in the corner where the two would meet. */
+@media (max-height: 640px) {
+  .dive-end { padding: 16px 20px 18px; }
+  .dive-end strong { font-size: 24px; }
+  .dive-end p { margin-top: 4px; }
+  .dive-name { margin-top: 6px; }
+  .dive-scores { margin-top: 10px; }
+  .dive-scores li { height: 22px; }
+  .dive-end .button { margin-top: 14px; }
+}
+@media (max-height: 640px) and (min-width: 560px) {
+  .dive-end { width: min(560px, 100vw - 128px); }
+  .dive-scores { columns: 2; column-gap: 26px; }
+  .dive-scores li { break-inside: avoid; height: 24px; }
+}
+@media (max-height: 545px) {
+  .dive.is-over .dive-score, .dive.is-over .dive-best { visibility: hidden; }
+}
+@media (max-height: 360px) {
+  .dive-end { padding: 12px 20px; }
+  .dive-end strong { font-size: 20px; }
+  .dive-end p { margin-top: 0; }
+  .dive-name { margin-top: 5px; padding-block: 1px 2px; }
+  .dive-scores { margin-top: 8px; }
+  .dive-scores li { height: 22px; }
+  .dive-end .button { margin-top: 10px; padding-block: 10px; }
+}
 
 /* ---- Motion. Nothing here runs when the visitor has asked the system for less motion. ---- */
 @media (prefers-reduced-motion: no-preference) {
