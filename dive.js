@@ -19,14 +19,14 @@ const WORDS = {
     name: 'A game under the water',
     hint: 'Steer with the mouse or the arrow keys. Keep clear of bigger fish, junk and hooks. Small fish and fireflies are safe to eat; other bugs pay more but hurt.',
     touch: 'Hold a finger down and drag: the fish swims that way. Keep clear of bigger fish, junk and hooks. Small fish and fireflies are safe to eat; other bugs pay more but hurt.',
-    score: 'Score', best: 'Best', newBest: 'New best!', died: 'You died', letters: 'Your three letters',
+    score: 'Score', best: 'Best', newBest: 'New best!', died: 'You died', letters: 'Enter your name',
     again: 'Again', leave: 'Leave', close: 'Leave the game (Esc)',
   },
   lt: {
     name: 'Žaidimas po vandeniu',
     hint: 'Valdyk pele arba rodyklėmis. Saugokis didesnių žuvų, šiukšlių ir kabliukų. Mažos žuvytės ir jonvabaliai saugūs, kiti vabalai duoda daugiau taškų, bet pakenkia.',
     touch: 'Laikyk pirštą ir tempk: žuvis plauks ta kryptimi. Saugokis didesnių žuvų, šiukšlių ir kabliukų. Mažos žuvytės ir jonvabaliai saugūs, kiti vabalai duoda daugiau taškų, bet pakenkia.',
-    score: 'Taškai', best: 'Rekordas', newBest: 'Naujas rekordas!', died: 'Tu žuvai', letters: 'Tavo trys raidės',
+    score: 'Taškai', best: 'Rekordas', newBest: 'Naujas rekordas!', died: 'Tu žuvai', letters: 'Įvesk savo vardą',
     again: 'Dar kartą', leave: 'Išeiti', close: 'Išeiti iš žaidimo (Esc)',
   },
 };

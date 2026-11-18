@@ -495,13 +495,15 @@ footer::after { z-index: 1; -webkit-mask: var(--art-seabed) 85% 100% / auto 100%
 .dive-end p { margin: 10px 0 0; color: var(--muted); }
 /* Three letters for a score that has made the table (dive.js). They are typed, so the box takes the caret
    and the selection that the game's water refuses, and its letters are large enough for a phone not to zoom in. */
-.dive-name { display: block; width: 11em; margin: 10px auto 0; padding: 3px 0 4px 0.14em; border: 0; border-bottom: 2px solid var(--accent);
-             border-radius: 0; background: none; color: var(--accent); caret-color: var(--accent); font: inherit; font-size: 16px;
-             font-weight: 700; letter-spacing: 0.14em; text-align: center; text-transform: uppercase;
-             -webkit-user-select: text; user-select: text; }
+.dive-name { display: block; width: 100%; max-width: 230px; margin: 12px auto 0; padding: 9px 10px 9px calc(10px + 0.14em);
+             border: 1.5px solid color-mix(in srgb, var(--text) 45%, transparent); border-radius: 10px;
+             background: color-mix(in srgb, var(--text) 9%, transparent); color: var(--accent); caret-color: var(--accent);
+             font: inherit; font-size: 16px; font-weight: 700; letter-spacing: 0.14em; text-align: center; text-transform: uppercase;
+             cursor: text; -webkit-user-select: text; user-select: text; }
 .dive-name[hidden] { display: none; }
-.dive-name::placeholder { color: var(--muted); opacity: 0.8; font-size: 14px; font-weight: 400; letter-spacing: 0; text-transform: none; }
-.dive-name:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 8px; border-bottom-color: transparent; }
+.dive-name::placeholder { color: var(--muted); opacity: 0.9; font-size: 15px; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.dive-name:hover { border-color: color-mix(in srgb, var(--text) 70%, transparent); }
+.dive-name:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
 /* The ten best, as a food chain: the higher a score stands, the bigger its fish (--place is its row, from 0).
    The line of the game that has just ended is in the colour of the player's own fish. */
 .dive-scores { list-style: none; margin: 14px 0 0; padding: 0; counter-reset: place; text-align: left; font-size: 15px;
@@ -524,7 +526,7 @@ footer::after { z-index: 1; -webkit-mask: var(--art-seabed) 85% 100% / auto 100%
   .dive-end { padding: 16px 20px 18px; }
   .dive-end strong { font-size: 24px; }
   .dive-end p { margin-top: 4px; }
-  .dive-name { margin-top: 6px; }
+  .dive-name { margin-top: 8px; padding-block: 6px; }
   .dive-scores { margin-top: 10px; }
   .dive-scores li { height: 22px; }
   .dive-end .button { margin-top: 14px; }
@@ -541,7 +543,7 @@ footer::after { z-index: 1; -webkit-mask: var(--art-seabed) 85% 100% / auto 100%
   .dive-end { padding: 12px 20px; }
   .dive-end strong { font-size: 20px; }
   .dive-end p { margin-top: 0; }
-  .dive-name { margin-top: 5px; padding-block: 1px 2px; }
+  .dive-name { margin-top: 5px; padding-block: 3px; }
   .dive-scores { margin-top: 8px; }
   .dive-scores li { height: 22px; }
   .dive-end .button { margin-top: 10px; padding-block: 10px; }
